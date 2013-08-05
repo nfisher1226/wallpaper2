@@ -29,42 +29,29 @@ USERCONFIGDIR=$HOME/.config/wallpaper
 LIBDIR=$PREFIX/lib/$PROGNAME
 . $CONFIGDIR/conf
 [ -f "$USERCONFIGDIR/conf" ] && . "$USERCONFIGDIR/conf"
-export PREVIEW_BACKEND PREFIX LIBDIR WP_BACKEND
+export PREFIX LIBDIR USERCONFIGDIR
 
 # Get translations
 #[ -f "$PREFIX/lib/bash-functions/locale.sh" ] && \
 #  . $PREFIX/lib/bash-functions/locale.sh
 
+[ ! -d "$USERCONFIGDIR" ] && install -d "$USERCONFIGDIR"
+
+[ ! -f "$USERCONFIGDIR/mode" ] && echo Stretch > "$USERCONFIGDIR/mode"
 MODE="$(cat $USERCONFIGDIR/mode)"
 [ "$MODE" = "" ] && MODE=Stretch
-case $MODE in
-Stretch)
-MODELIST="<item>Stretch</item>
-<item>Scale</item>
-<item>Center</item>
-<item>Tile</item>"
-;;
-Scale)
-MODELIST="<item>Scale</item>
-<item>Stretch</item>
-<item>Center</item>
-<item>Tile</item>"
-;;
-Center)
-MODELIST="<item>Center</item>
-<item>Tile</item>
-<item>Stretch</item>
-<item>Scale</item>"
-;;
-Tile)
-MODELIST="<item>Tile</item>
-<item>Center</item>
-<item>Stretch</item>
-<item>Scale</item>"
-;;
-esac
 
-[ -f "$USERCONFIGDIR/backend" ] && BACKEND="$(cat $USERCONFIGDIR/backend)"
+if [ ! -f "$USERCONFIGDIR/wp-dir" ] ; then
+  dirname $(find /usr/share/backgrounds -type f | sort | head -n 1) > \
+    "$USERCONFIGDIR/wp-dir"
+fi
+if [ ! -f "$USERCONFIGDIR/wp-dirs" ] ; then
+  dirname $(find /usr/share/backgrounds -type f | sort | head -n 1) > \
+    "$USERCONFIGDIR/wp-dirs"
+fi
+
+[ ! -f "$USERCONFIGDIR/backend" ] && echo feh > "$USERCONFIGDIR/backend"
+BACKEND="$(cat $USERCONFIGDIR/backend)"
 [ "$BACKEND" = "" ] && BACKEND=feh
 
 export WP_DLG="
@@ -109,8 +96,12 @@ export WP_DLG="
       <frame Background mode>
        <comboboxtext>
         <variable>MODE</variable>
+        <default>$MODE</default>
         <action>echo \$MODE > $USERCONFIGDIR/mode</action>
-        $MODELIST
+        <item>Stretch</item>
+        <item>Scale</item>
+        <item>Center</item>
+        <item>Tile</item>
        </comboboxtext>
       </frame>
      </hbox>
