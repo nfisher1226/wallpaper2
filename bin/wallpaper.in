@@ -20,7 +20,7 @@
 #
 #
 
-VERSION=2.0a
+VERSION=2.0a1
 SELF="$0"
 PREFIX="$(dirname $(dirname $SELF))"
 PROGNAME=wallpaper
