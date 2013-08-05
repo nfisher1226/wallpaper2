@@ -1,0 +1,15 @@
+For the impatient:
+  # make install
+
+The default prefix (/usr/local) can be overridden on the command line:
+  # make PREFIX=/usr install
+
+The default location for config files ($PREFIX/etc/wallpaper) can be
+overridden on the command line:
+  # make SYSCONFDIR=/etc install
+
+The package can be installed to a staging directory for packaging:
+  $ make DESTDIR=$PWD/pkg PREFIX=/usr SYSCONFDIR=/etc install
+
+Deps:
+gtkdialog <http://code.google.com/p/gtkdialog/>

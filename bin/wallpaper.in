@@ -1,0 +1,100 @@
+#!/bin/sh
+#  wallpaper v2
+#
+#  Copyright 2013 Nathan Fisher <nfisher.sr@gmail.com>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
+#
+#
+
+VERSION=2.0
+SELF="$0"
+PREFIX="$(dirname $(dirname $SELF))"
+PROGNAME=wallpaper
+CONFIGDIR=@@@SYSCONFDIR@@@/wallpaper
+USERCONFIGDIR=$HOME/.config/wallpaper
+LIBDIR=$PREFIX/lib/$PROGNAME
+. $CONFIGDIR/conf
+[ -f "$USERCONFIGDIR/conf" ] && . "$USERCONFIGDIR/conf"
+
+# Get translations
+#[ -f "$PREFIX/lib/bash-functions/locale.sh" ] && \
+#  . $PREFIX/lib/bash-functions/locale.sh
+
+export WP_DLG="
+<window title=\"Wallpaper-$VERSION\" icon_name=\"preferences-desktop-wallpaper\">
+ <vbox>
+  <hbox>
+   <notebook labels=\"Set background|Advanced\">
+    <vbox>
+     <hbox>
+      <comboboxentry accept=\"directory\" file-monitor=\"true\">
+       <variable>WP_DIR</variable>
+       <default>$(cat $USERCONFIGDIR/wp-dir)</default>
+       <input file>$USERCONFIGDIR/wp-dirs</input>
+       <output file>$USERCONFIGDIR/wp-dirs</output>
+       <action signal=\"activate\">save:WP_DIR</action>
+       <action>echo \$WP_DIR > $USERCONFIGDIR/wp-dir</action>
+       <action signal=\"changed\">clear:WP</action>
+       <action signal=\"changed\">refresh:WP</action>
+       <action signal=\"activate\">clear:WP</action>
+       <action signal=\"activate\">refresh:WP</action>
+       <action signal=\"file-changed\">clear:WP</action>
+       <action signal=\"file-changed\">refresh:WP</action>
+       <action signal=\"file-changed\">refresh:WP_DIR</action>
+      </comboboxentry>
+      <button>
+       <input file stock=\"gtk-directory\"></input>
+       <action type=\"fileselect\">WP_DIR</action>
+       <action>save:WP_DIR</action>
+      </button>
+     </hbox>
+     <list selected-row=\"0\">
+      <variable>WP</variable>
+      <height>200</height>
+      <input>$LIBDIR/buildlist.sh \$WP_DIR</input>
+      <action>echo \$WP_DIR/\$WP > $USERCONFIGDIR/current</action>
+      <action signal=\"selection-changed\">$LIBDIR/refresh-preview.sh</action>
+      <action signal=\"selection-changed\" type=\"refresh\">CURRENTIMG</action>
+     </list>
+    </vbox>
+    <vbox>
+     <hbox>
+      <text>
+       <label>TBD</label>
+      </text>
+     </hbox>
+    </vbox>
+   </notebook>
+   <pixmap file-monitor=\"true\">
+    <variable>CURRENTIMG</variable>
+    <input file>$HOME/.config/wallpaper/current.png</input>
+   </pixmap>
+  </hbox>
+  <hbox>
+   <button>
+    <label>Apply</label>
+    <input file stock=\"gtk-apply\"></input>
+   </button>
+   <button>
+    <label>Close</label>
+    <input file stock=\"gtk-close\"></input>
+   </button>
+  </hbox>
+ </vbox>
+</window>
+"
+gtkdialog --program WP_DLG
