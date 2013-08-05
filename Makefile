@@ -32,6 +32,10 @@ install-conf:
 	for OBJ in ${CONF_OBJS} ; \
 		do install -m 644 $${OBJ} ${DESTDIR}${SYSCONFDIR}/wallpaper ; done
 
+install-desktop:
+	install -d ${DESTDIR}${PREFIX}/share/applications
+	install -m 644 share/wallpaper.desktop ${DESTDIR}${PREFIX}/share/applications
+
 install-libs:
 	install -d ${DESTDIR}${LIBDIR}
 	for OBJ in ${LIB_OBJS} ; \
@@ -45,7 +49,7 @@ install-libs:
 			${DESTDIR}${LIBDIR}/preview-backends ; done
 
 
-install: install-bin install-conf install-libs
+install: install-bin install-conf install-desktop install-libs
 
 clean:
 	rm -f bin/wallpaper

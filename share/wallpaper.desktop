@@ -1,0 +1,15 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Wallpaper setter
+Name[de]=Hintergrundbild einstellen
+Name[es]=Fondo de pantalla ajustes
+Name[fr]=Arrière plan du bureau
+Name[it]=Gestore sfondo
+Name[ru]=Настройки обоев
+Icon=wallpaper
+Comment=Set backdrop image
+Exec=wallpaper
+Terminal=false
+Type=Application
+Categories=System;Settings;DesktopSettings
+GenericName=Wallpaper setter
