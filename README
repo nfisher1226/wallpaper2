@@ -1,0 +1,17 @@
+Lightweight graphical wallpaper setter for Linux using gtkdialog for the
+gui. Wallpaper2 is a scratch rewrite of the old wallpaper setter written
+for Grafpup and Puppy linux. It has been designed to handle multiple
+backends for background setting and preview generation and to behave in
+general more like a compiled program than a shell script.
+
+The current backends for preview generation are:
+netpbm
+imagemagick
+
+The current backends for backdrop setting are:
+ROX-Filer
+feh
+
+The current status of the project is just a gui mockup that cannot yet
+actually set your wallpaper. This will however be changing in the very
+near future.
