@@ -29,6 +29,7 @@ USERCONFIGDIR=$HOME/.config/wallpaper
 LIBDIR=$PREFIX/lib/$PROGNAME
 . $CONFIGDIR/conf
 [ -f "$USERCONFIGDIR/conf" ] && . "$USERCONFIGDIR/conf"
+export PREVIEW_BACKEND PREFIX LIBDIR WP_BACKEND
 
 # Get translations
 #[ -f "$PREFIX/lib/bash-functions/locale.sh" ] && \
@@ -88,6 +89,7 @@ export WP_DLG="
    <button>
     <label>Apply</label>
     <input file stock=\"gtk-apply\"></input>
+    <action>$LIBDIR/set-wallpaper.sh \$WP_DIR/\$WP</action>
    </button>
    <button>
     <label>Close</label>

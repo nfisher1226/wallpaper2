@@ -4,7 +4,10 @@ BINDIR = ${PREFIX}/bin
 LIBDIR = ${PREFIX}/lib/wallpaper
 BIN_OBJS = bin/wallpaper
 CONF_OBJS = etc/conf
-LIB_OBJS = lib/buildlist.sh lib/refresh-preview.sh
+LIB_OBJS = \
+lib/buildlist.sh \
+lib/refresh-preview.sh \
+lib/set-wallpaper.sh
 PLUGIN_OBJS = \
 lib/plugins/rox.sh \
 lib/plugins/feh.sh

@@ -1,4 +1,4 @@
-set_backdrop () {
+set_wallpaper () {
 if [ "$1" = "-clear" ];then
  grep -v '<backdrop' $HOME/.config/rox.sourceforge.net/ROX-Filer/pb_default > $HOME/.config/wallpaper/pb
  mv -f $HOME/.config/wallpaper/pb $HOME/.config/rox.sourceforge.net/ROX-Filer/pb_default
