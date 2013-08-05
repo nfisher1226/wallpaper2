@@ -20,7 +20,7 @@
 #
 #
 
-VERSION=2.0
+VERSION=2.0a
 SELF="$0"
 PREFIX="$(dirname $(dirname $SELF))"
 PROGNAME=wallpaper
@@ -35,11 +35,43 @@ export PREVIEW_BACKEND PREFIX LIBDIR WP_BACKEND
 #[ -f "$PREFIX/lib/bash-functions/locale.sh" ] && \
 #  . $PREFIX/lib/bash-functions/locale.sh
 
+MODE="$(cat $USERCONFIGDIR/mode)"
+[ "$MODE" = "" ] && MODE=Stretch
+case $MODE in
+Stretch)
+MODELIST="<item>Stretch</item>
+<item>Scale</item>
+<item>Center</item>
+<item>Tile</item>"
+;;
+Scale)
+MODELIST="<item>Scale</item>
+<item>Stretch</item>
+<item>Center</item>
+<item>Tile</item>"
+;;
+Center)
+MODELIST="<item>Center</item>
+<item>Tile</item>
+<item>Stretch</item>
+<item>Scale</item>"
+;;
+Tile)
+MODELIST="<item>Tile</item>
+<item>Center</item>
+<item>Stretch</item>
+<item>Scale</item>"
+;;
+esac
+
+[ -f "$USERCONFIGDIR/backend" ] && BACKEND="$(cat $USERCONFIGDIR/backend)"
+[ "$BACKEND" = "" ] && BACKEND=feh
+
 export WP_DLG="
 <window title=\"Wallpaper-$VERSION\" icon_name=\"preferences-desktop-wallpaper\">
  <vbox>
   <hbox>
-   <notebook labels=\"Set background|Advanced\">
+   <notebook labels=\"Set background|Options\">
     <vbox>
      <hbox>
       <comboboxentry accept=\"directory\" file-monitor=\"true\">
@@ -74,9 +106,27 @@ export WP_DLG="
     </vbox>
     <vbox>
      <hbox>
-      <text>
-       <label>TBD</label>
-      </text>
+      <frame Background mode>
+       <comboboxtext>
+        <variable>MODE</variable>
+        <action>echo \$MODE > $USERCONFIGDIR/mode</action>
+        $MODELIST
+       </comboboxtext>
+      </frame>
+     </hbox>
+     <hbox>
+      <frame Backend>
+       <comboboxtext>
+        <variable>BACKEND</variable>
+        <default>$BACKEND</default>
+        <action>echo \$BACKEND > $USERCONFIGDIR/backend</action>
+        $(ls -1 $LIBDIR/plugins/*.sh | sed 's%.sh%%g' | \
+          while read B
+          do
+            echo '<item>'$(basename $B)'</item>'
+          done)
+       </comboboxtext>
+      </frame>
      </hbox>
     </vbox>
    </notebook>
