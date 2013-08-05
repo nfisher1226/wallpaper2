@@ -11,7 +11,3 @@ imagemagick
 The current backends for backdrop setting are:
 ROX-Filer
 feh
-
-The current status of the project is just a gui mockup that cannot yet
-actually set your wallpaper. This will however be changing in the very
-near future.

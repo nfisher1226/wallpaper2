@@ -67,7 +67,7 @@ export WP_DLG="
       <variable>WP</variable>
       <height>200</height>
       <input>$LIBDIR/buildlist.sh \$WP_DIR</input>
-      <action>echo \$WP_DIR/\$WP > $USERCONFIGDIR/current</action>
+      <action signal=\"selection-changed\">echo \$WP_DIR/\$WP > $USERCONFIGDIR/current</action>
       <action signal=\"selection-changed\">$LIBDIR/refresh-preview.sh</action>
       <action signal=\"selection-changed\" type=\"refresh\">CURRENTIMG</action>
      </list>
@@ -82,6 +82,7 @@ export WP_DLG="
    </notebook>
    <pixmap file-monitor=\"true\">
     <variable>CURRENTIMG</variable>
+    <width>300</width>
     <input file>$HOME/.config/wallpaper/current.png</input>
    </pixmap>
   </hbox>

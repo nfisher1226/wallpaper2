@@ -11,9 +11,6 @@ lib/set-wallpaper.sh
 PLUGIN_OBJS = \
 lib/plugins/rox.sh \
 lib/plugins/feh.sh
-PREVIEW_OBJS = \
-lib/preview-backends/imagemagick.sh \
-lib/preview-backends/netpbm.sh
 
 all: bin/wallpaper
 	@echo "Now run \"make install\""
@@ -43,10 +40,6 @@ install-libs:
 	install -d ${DESTDIR}${LIBDIR}/plugins
 	for OBJ in ${PLUGIN_OBJS} ; \
 		do install -m 644 $${OBJ} ${DESTDIR}${LIBDIR}/plugins ; done
-	install -d ${DESTDIR}${LIBDIR}/preview-backends
-	for OBJ in ${PREVIEW_OBJS} ; \
-		do install -m 644 $${OBJ} \
-			${DESTDIR}${LIBDIR}/preview-backends ; done
 
 
 install: install-bin install-conf install-desktop install-libs
