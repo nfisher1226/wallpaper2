@@ -41,13 +41,19 @@ export PREFIX LIBDIR USERCONFIGDIR
 MODE="$(cat $USERCONFIGDIR/mode)"
 [ "$MODE" = "" ] && MODE=Stretch
 
-if [ ! -f "$USERCONFIGDIR/wp-dir" ] ; then
+if [ ! -f "$USERCONFIGDIR/wp-dir" ] && \
+   [ ! "$(cat "$USERCONFIGDIR/wp-dir")" = "" ] ; then
   dirname $(find /usr/share/backgrounds -type f | sort | head -n 1) > \
     "$USERCONFIGDIR/wp-dir"
 fi
 if [ ! -f "$USERCONFIGDIR/wp-dirs" ] ; then
   dirname $(find /usr/share/backgrounds -type f | sort | head -n 1) > \
     "$USERCONFIGDIR/wp-dirs"
+else
+  TMPFILE=$(mktemp)
+  awk '!x[$0]++' "$USERCONFIGDIR/wp-dirs" > $TMPFILE
+  mv $TMPFILE "$USERCONFIGDIR/wp-dirs"
+  unset TMPFILE
 fi
 
 [ ! -f "$USERCONFIGDIR/backend" ] && echo feh > "$USERCONFIGDIR/backend"
@@ -70,11 +76,6 @@ export WP_DLG="
        <action>echo \$WP_DIR > $USERCONFIGDIR/wp-dir</action>
        <action signal=\"changed\">clear:WP</action>
        <action signal=\"changed\">refresh:WP</action>
-       <action signal=\"activate\">clear:WP</action>
-       <action signal=\"activate\">refresh:WP</action>
-       <action signal=\"file-changed\">clear:WP</action>
-       <action signal=\"file-changed\">refresh:WP</action>
-       <action signal=\"file-changed\">refresh:WP_DIR</action>
       </comboboxentry>
       <button>
        <input file stock=\"gtk-directory\"></input>
@@ -82,14 +83,14 @@ export WP_DLG="
        <action>save:WP_DIR</action>
       </button>
      </hbox>
-     <list selected-row=\"0\">
+     <tree headers-visible=\"false\" selected-row=\"0\">
       <variable>WP</variable>
       <height>200</height>
       <input>$LIBDIR/buildlist.sh \$WP_DIR</input>
-      <action signal=\"selection-changed\">echo \$WP_DIR/\$WP > $USERCONFIGDIR/current</action>
-      <action signal=\"selection-changed\">$LIBDIR/refresh-preview.sh</action>
-      <action signal=\"selection-changed\" type=\"refresh\">CURRENTIMG</action>
-     </list>
+      <action signal=\"cursor-changed\">echo \$WP_DIR/\$WP > $USERCONFIGDIR/current</action>
+      <action signal=\"cursor-changed\">$LIBDIR/refresh-preview.sh</action>
+      <action signal=\"cursor-changed\" type=\"refresh\">CURRENTIMG</action>
+     </tree>
     </vbox>
     <vbox>
      <hbox>
@@ -131,7 +132,7 @@ export WP_DLG="
    <button>
     <label>Apply</label>
     <input file stock=\"gtk-apply\"></input>
-    <action>$LIBDIR/set-wallpaper.sh \$WP_DIR/\$WP</action>
+    <action>$LIBDIR/set-wallpaper.sh \$MODE \$WP_DIR/\$WP</action>
    </button>
    <button>
     <label>Close</label>

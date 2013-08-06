@@ -7,12 +7,12 @@ if [ "$1" = "-clear" ];then
  exit
 fi
 
-MODE="$(cat $HOME/.config/wallpaper/mode)"
+MODE="$1"
 [ "$MODE" = "" ] && MODE="Scale"
 [ "$MODE" = "Center" ] && MODE="Centre"
 
-FILE="$1"
-[ "$FILE" = "" ] && FILE="`cat $HOME/.config/rox.sourceforge.net/ROX-Filer/pb_default | grep '<backdrop' | cut -f 2 -d '>' | cut -f 1 -d '<'`"
+FILE="$2"
+[ "$FILE" = "" ] && FILE="$(grep '<backdrop' $HOME/.config/rox.sourceforge.net/ROX-Filer/pb_default | cut -f 2 -d '>' | cut -f 1 -d '<')"
 
 rox --RPC << EOF
 <?xml version="1.0"?>
