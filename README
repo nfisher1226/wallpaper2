@@ -4,10 +4,8 @@ for Grafpup and Puppy linux. It has been designed to handle multiple
 backends for background setting and preview generation and to behave in
 general more like a compiled program than a shell script.
 
-The current backends for preview generation are:
-netpbm
-imagemagick
-
 The current backends for backdrop setting are:
 ROX-Filer
 feh
+esetroot
+imlibsetroot

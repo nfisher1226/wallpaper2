@@ -83,13 +83,13 @@ export WP_DLG="
        <action>save:WP_DIR</action>
       </button>
      </hbox>
-     <tree headers-visible=\"false\" selected-row=\"0\">
+     <tree headers-visible=\"false\" selected-row=\"0\" selection-mode=\"1\">
       <variable>WP</variable>
       <height>200</height>
       <input>$LIBDIR/buildlist.sh \$WP_DIR</input>
-      <action signal=\"cursor-changed\">echo \$WP_DIR/\$WP > $USERCONFIGDIR/current</action>
-      <action signal=\"cursor-changed\">$LIBDIR/refresh-preview.sh</action>
-      <action signal=\"cursor-changed\" type=\"refresh\">CURRENTIMG</action>
+      <action signal=\"changed\">echo \$WP_DIR/\$WP > $USERCONFIGDIR/current</action>
+      <action signal=\"changed\">$LIBDIR/refresh-preview.sh</action>
+      <action signal=\"changed\" type=\"refresh\">CURRENTIMG</action>
      </tree>
     </vbox>
     <vbox>
