@@ -36,16 +36,11 @@ export PREFIX LIBDIR USERCONFIGDIR
 #  . $PREFIX/lib/bash-functions/locale.sh
 
 [ ! -d "$USERCONFIGDIR" ] && install -d "$USERCONFIGDIR"
-
-[ ! -f "$USERCONFIGDIR/mode" ] && echo Stretch > "$USERCONFIGDIR/mode"
-MODE="$(cat $USERCONFIGDIR/mode)"
+[ -f "$USERCONFIGDIR/state" ] && . "$USERCONFIGDIR/state"
 [ "$MODE" = "" ] && MODE=Stretch
-
-if [ ! -f "$USERCONFIGDIR/wp-dir" ] && \
-   [ ! "$(cat "$USERCONFIGDIR/wp-dir")" = "" ] ; then
-  dirname $(find /usr/share/backgrounds -type f | sort | head -n 1) > \
-    "$USERCONFIGDIR/wp-dir"
-fi
+[ "$BACKEND" = "" ] && BACKEND=feh
+[ "$WP_DIR" = "" ] && \
+  WP_DIR="dirname $(find /usr/share/backgrounds -type f | sort | head -n 1)"
 if [ ! -f "$USERCONFIGDIR/wp-dirs" ] ; then
   dirname $(find /usr/share/backgrounds -type f | sort | head -n 1) > \
     "$USERCONFIGDIR/wp-dirs"
@@ -55,10 +50,7 @@ else
   mv $TMPFILE "$USERCONFIGDIR/wp-dirs"
   unset TMPFILE
 fi
-
-[ ! -f "$USERCONFIGDIR/backend" ] && echo feh > "$USERCONFIGDIR/backend"
-BACKEND="$(cat $USERCONFIGDIR/backend)"
-[ "$BACKEND" = "" ] && BACKEND=feh
+export BACKEND MODE WP_DIR
 
 export WP_DLG="
 <window title=\"Wallpaper-$VERSION\" icon_name=\"preferences-desktop-wallpaper\">
@@ -69,11 +61,10 @@ export WP_DLG="
      <hbox>
       <comboboxentry accept=\"directory\" file-monitor=\"true\">
        <variable>WP_DIR</variable>
-       <default>$(cat $USERCONFIGDIR/wp-dir)</default>
+       <default>$WP_DIR</default>
        <input file>$USERCONFIGDIR/wp-dirs</input>
        <output file>$USERCONFIGDIR/wp-dirs</output>
        <action signal=\"activate\">save:WP_DIR</action>
-       <action>echo \$WP_DIR > $USERCONFIGDIR/wp-dir</action>
        <action signal=\"changed\">clear:WP</action>
        <action signal=\"changed\">refresh:WP</action>
       </comboboxentry>
@@ -86,7 +77,7 @@ export WP_DLG="
      <tree headers-visible=\"false\" selected-row=\"0\" selection-mode=\"1\">
       <variable>WP</variable>
       <height>200</height>
-      <input>$LIBDIR/buildlist.sh \$WP_DIR</input>
+      <input>$LIBDIR/buildlist.sh</input>
       <action signal=\"changed\">echo \$WP_DIR/\$WP > $USERCONFIGDIR/current</action>
       <action signal=\"changed\">$LIBDIR/refresh-preview.sh</action>
       <action signal=\"changed\" type=\"refresh\">CURRENTIMG</action>
@@ -98,7 +89,6 @@ export WP_DLG="
        <comboboxtext>
         <variable>MODE</variable>
         <default>$MODE</default>
-        <action>echo \$MODE > $USERCONFIGDIR/mode</action>
         <item>Stretch</item>
         <item>Scale</item>
         <item>Center</item>
@@ -111,7 +101,6 @@ export WP_DLG="
        <comboboxtext>
         <variable>BACKEND</variable>
         <default>$BACKEND</default>
-        <action>echo \$BACKEND > $USERCONFIGDIR/backend</action>
         $(ls -1 $LIBDIR/plugins/*.sh | sed 's%.sh%%g' | \
           while read B
           do
@@ -122,7 +111,7 @@ export WP_DLG="
      </hbox>
     </vbox>
    </notebook>
-   <pixmap file-monitor=\"true\">
+   <pixmap file-monitor=\"true\" export=\"false\">
     <variable>CURRENTIMG</variable>
     <width>300</width>
     <input file>$HOME/.config/wallpaper/current.png</input>
@@ -132,7 +121,7 @@ export WP_DLG="
    <button>
     <label>Apply</label>
     <input file stock=\"gtk-apply\"></input>
-    <action>$LIBDIR/set-wallpaper.sh \$MODE \"\$WP_DIR/\$WP\"</action>
+    <action>$LIBDIR/set-wallpaper.sh</action>
    </button>
    <button>
     <label>Close</label>
@@ -142,4 +131,4 @@ export WP_DLG="
  </vbox>
 </window>
 "
-gtkdialog --program WP_DLG
+gtkdialog --program WP_DLG | tee $USERCONFIGDIR/state
