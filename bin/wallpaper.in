@@ -50,7 +50,7 @@ else
   mv $TMPFILE "$USERCONFIGDIR/wp-dirs"
   unset TMPFILE
 fi
-export BACKEND MODE WP_DIR
+export BACKEND MODE WP_DIR WP
 
 export WP_DLG="
 <window title=\"Wallpaper-$VERSION\" icon_name=\"preferences-desktop-wallpaper\">
@@ -78,7 +78,6 @@ export WP_DLG="
       <variable>WP</variable>
       <height>200</height>
       <input>$LIBDIR/buildlist.sh</input>
-      <action signal=\"changed\">echo \$WP_DIR/\$WP > $USERCONFIGDIR/current</action>
       <action signal=\"changed\">$LIBDIR/refresh-preview.sh</action>
       <action signal=\"changed\" type=\"refresh\">CURRENTIMG</action>
      </tree>
