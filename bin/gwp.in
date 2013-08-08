@@ -1,7 +1,7 @@
 #!/bin/sh
 #  wallpaper v2
 #
-#  Copyright 2013 Nathan Fisher <nfisher.sr@gmail.com>
+#  Copyright(©) 2013 Nathan Fisher <nfisher.sr@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -20,20 +20,17 @@
 #
 #
 
-VERSION=2.0a1
+VERSION=2.0a2
 SELF="$0"
 PREFIX="$(dirname $(dirname $SELF))"
-PROGNAME=wallpaper
-CONFIGDIR=@@@SYSCONFDIR@@@/wallpaper
-USERCONFIGDIR=$HOME/.config/wallpaper
+PROGNAME=$(basename $SELF)
+TEXTDOMAIN=$PROGNAME
+CONFIGDIR=@@@SYSCONFDIR@@@/$PROGNAME
+USERCONFIGDIR=$HOME/.config/$PROGNAME
 LIBDIR=$PREFIX/lib/$PROGNAME
 . $CONFIGDIR/conf
 [ -f "$USERCONFIGDIR/conf" ] && . "$USERCONFIGDIR/conf"
-export PREFIX LIBDIR USERCONFIGDIR
-
-# Get translations
-#[ -f "$PREFIX/lib/bash-functions/locale.sh" ] && \
-#  . $PREFIX/lib/bash-functions/locale.sh
+export PREFIX PROGNAME TEXTDOMAIN CONFIGDIR USERCONFIGDIR LIBDIR
 
 [ ! -d "$USERCONFIGDIR" ] && install -d "$USERCONFIGDIR"
 [ -f "$USERCONFIGDIR/state" ] && . "$USERCONFIGDIR/state"
@@ -56,7 +53,7 @@ export WP_DLG="
 <window title=\"Wallpaper-$VERSION\" icon_name=\"preferences-desktop-wallpaper\">
  <vbox>
   <hbox>
-   <notebook labels=\"Set background|Options\">
+   <notebook labels=\"$(gettext 'Images|Options')\">
     <vbox>
      <hbox>
       <comboboxentry accept=\"directory\" file-monitor=\"true\">
@@ -84,7 +81,7 @@ export WP_DLG="
     </vbox>
     <vbox>
      <hbox>
-      <frame Background mode>
+      <frame $(gettext 'Background mode')>
        <comboboxtext>
         <variable>MODE</variable>
         <default>$MODE</default>
@@ -96,7 +93,7 @@ export WP_DLG="
       </frame>
      </hbox>
      <hbox>
-      <frame Backend>
+      <frame $(gettext 'Backend')>
        <comboboxtext>
         <variable>BACKEND</variable>
         <default>$BACKEND</default>
@@ -113,21 +110,23 @@ export WP_DLG="
    <pixmap file-monitor=\"true\" export=\"false\">
     <variable>CURRENTIMG</variable>
     <width>300</width>
-    <input file>$HOME/.config/wallpaper/current.png</input>
+    <input file>$USERCONFIGDIR/current.png</input>
    </pixmap>
   </hbox>
   <hbox>
    <button>
-    <label>Apply</label>
+    <label>$(gettext 'Apply')</label>
     <input file stock=\"gtk-apply\"></input>
     <action>$LIBDIR/set-wallpaper.sh</action>
    </button>
    <button>
-    <label>Close</label>
+    <label>$(gettext 'Close')</label>
     <input file stock=\"gtk-close\"></input>
    </button>
   </hbox>
  </vbox>
 </window>
 "
+echo "Gwallpaper-$VERSION"
+echo 'Copyright(©) 2013 Nathan Fisher <nfisher.sr@gmail.com>'
 gtkdialog --program WP_DLG | tee $USERCONFIGDIR/state

@@ -1,5 +1,5 @@
 Lightweight graphical wallpaper setter for Linux using gtkdialog for the
-gui. Wallpaper2 is a scratch rewrite of the old wallpaper setter written
+gui. Gwp is a scratch rewrite of the old wallpaper setter written
 for Grafpup and Puppy linux. It has been designed to handle multiple
 backends for background setting and preview generation and to behave in
 general more like a compiled program than a shell script.

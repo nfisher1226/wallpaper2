@@ -1,9 +1,12 @@
+PROGNAME = gwp
 PREFIX ?=/usr/local
 SYSCONFDIR ?= ${PREFIX}/etc
 BINDIR = ${PREFIX}/bin
-LIBDIR = ${PREFIX}/lib/wallpaper
-BIN_OBJS = bin/wallpaper
+LIBDIR = ${PREFIX}/lib/${PROGNAME}
+DOCDIR ?= ${PREFIX}/share/doc/${PROGNAME}
+BIN_OBJS = bin/${PROGNAME}
 CONF_OBJS = etc/conf
+DOC_OBJS = README INSTALL COPYING
 
 LIB_OBJS = \
 lib/buildlist.sh \
@@ -16,12 +19,12 @@ lib/plugins/feh.sh \
 lib/plugins/esetroot.sh \
 lib/plugins/imlibsetroot.sh
 
-all: bin/wallpaper
+all: bin/gwp
 	@echo "Now run \"make install\""
 
-bin/wallpaper:
-	sed "s%@@@SYSCONFDIR@@@%${SYSCONFDIR}%" bin/wallpaper.in \
-		> bin/wallpaper
+bin/gwp:
+	sed "s%@@@SYSCONFDIR@@@%${SYSCONFDIR}%" bin/${PROGNAME}.in \
+		> bin/${PROGNAME}
 
 install-bin: all
 	install -d ${DESTDIR}${BINDIR}
@@ -29,13 +32,19 @@ install-bin: all
 		do install -m 755 $${OBJ} ${DESTDIR}${BINDIR} ; done
 
 install-conf:
-	install -d ${DESTDIR}${SYSCONFDIR}/wallpaper
+	install -d ${DESTDIR}${SYSCONFDIR}/${PROGNAME}
 	for OBJ in ${CONF_OBJS} ; \
-		do install -m 644 $${OBJ} ${DESTDIR}${SYSCONFDIR}/wallpaper ; done
+		do install -m 644 $${OBJ} ${DESTDIR}${SYSCONFDIR}/${PROGNAME} ; done
 
 install-desktop:
 	install -d ${DESTDIR}${PREFIX}/share/applications
-	install -m 644 share/wallpaper.desktop ${DESTDIR}${PREFIX}/share/applications
+	install -m 644 share/${PROGNAME}.desktop ${DESTDIR}${PREFIX}/share/applications
+
+install-doc:
+	install -d ${DESTDIR}${DOCDIR}
+	for OBJ in ${DOC_OBJS} ; \
+		do install -m 644 $${OBJ} ${DESTDIR}${DOCDIR}
+
 
 install-libs:
 	install -d ${DESTDIR}${LIBDIR}
@@ -49,6 +58,6 @@ install-libs:
 install: install-bin install-conf install-desktop install-libs
 
 clean:
-	rm -f bin/wallpaper
+	rm -f bin/gwp
 
 .PHONY: all install-bin install-conf install-libs install clean
