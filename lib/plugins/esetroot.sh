@@ -1,6 +1,6 @@
-if [ ! "$(which esetroot)" = "" ] ; then
+if [ ! "$(which esetroot 2>/dev/null)" = "" ] ; then
   ESETROOT=esetroot
-elif [ ! "$(which Esetroot)" = "" ] ; then
+elif [ ! "$(which Esetroot 2>/dev/null)" = "" ] ; then
   ESETROOT=Esetroot
 fi
 

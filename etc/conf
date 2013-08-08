@@ -1,0 +1,6 @@
+# The height of the preview (in pixels)
+HEIGHT=250
+# The default backend
+DEFAULT_BACKEND=feh
+# The default location for wallpapers
+DEFAULT_WP_DIR=/usr/share/backgrounds

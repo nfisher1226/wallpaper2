@@ -35,11 +35,11 @@ export PREFIX PROGNAME TEXTDOMAIN CONFIGDIR USERCONFIGDIR LIBDIR
 [ ! -d "$USERCONFIGDIR" ] && install -d "$USERCONFIGDIR"
 [ -f "$USERCONFIGDIR/state" ] && . "$USERCONFIGDIR/state"
 [ "$MODE" = "" ] && MODE=Stretch
-[ "$BACKEND" = "" ] && BACKEND=feh
+[ "$BACKEND" = "" ] && BACKEND=$DEFAULT_BACKEND
 [ "$WP_DIR" = "" ] && \
-  WP_DIR="dirname $(find /usr/share/backgrounds -type f | sort | head -n 1)"
+  WP_DIR="dirname $(find $DEFAULT_WP_DIR -type f | sort | head -n 1)"
 if [ ! -f "$USERCONFIGDIR/wp-dirs" ] ; then
-  dirname $(find /usr/share/backgrounds -type f | sort | head -n 1) > \
+  dirname $(find $DEFAULT_WP_DIR -type f | sort | head -n 1) > \
     "$USERCONFIGDIR/wp-dirs"
 else
   TMPFILE=$(mktemp)
@@ -50,7 +50,7 @@ fi
 export BACKEND MODE WP_DIR WP
 
 export WP_DLG="
-<window title=\"$PROGNAME-$VERSION\" icon_name=\"preferences-desktop-wallpaper\">
+<window title=\"$PROGNAME-$VERSION\" icon_name=\"preferences-desktop-wallpaper\" resizable=\"false\">
  <vbox>
   <hbox>
    <notebook labels=\"$(gettext 'Images|Options')\">
@@ -73,7 +73,6 @@ export WP_DLG="
      </hbox>
      <tree headers-visible=\"false\" selected-row=\"0\" selection-mode=\"1\">
       <variable>WP</variable>
-      <height>200</height>
       <input>$LIBDIR/buildlist.sh</input>
       <action signal=\"changed\">$LIBDIR/refresh-preview.sh</action>
       <action signal=\"changed\" type=\"refresh\">CURRENTIMG</action>
@@ -109,7 +108,7 @@ export WP_DLG="
    </notebook>
    <pixmap file-monitor=\"true\" export=\"false\">
     <variable>CURRENTIMG</variable>
-    <width>300</width>
+    <height>$HEIGHT</height>
     <input file>$USERCONFIGDIR/current.png</input>
    </pixmap>
   </hbox>
