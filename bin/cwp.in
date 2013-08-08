@@ -1,0 +1,9 @@
+#!/bin/sh
+LIBDIR=@@@LIBDIR@@@
+case "$1" in
+--last)
+. $HOME/.config/gwp/last
+export BACKEND MODE WP WP_DIR LIBDIR
+$LIBDIR/set-wallpaper.sh
+;;
+esac

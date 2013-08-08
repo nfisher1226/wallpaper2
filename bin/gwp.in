@@ -50,7 +50,7 @@ fi
 export BACKEND MODE WP_DIR WP
 
 export WP_DLG="
-<window title=\"Wallpaper-$VERSION\" icon_name=\"preferences-desktop-wallpaper\">
+<window title=\"$PROGNAME-$VERSION\" icon_name=\"preferences-desktop-wallpaper\">
  <vbox>
   <hbox>
    <notebook labels=\"$(gettext 'Images|Options')\">
@@ -118,6 +118,10 @@ export WP_DLG="
     <label>$(gettext 'Apply')</label>
     <input file stock=\"gtk-apply\"></input>
     <action>$LIBDIR/set-wallpaper.sh</action>
+    <action>echo WP_DIR=\$WP_DIR > $USERCONFIGDIR/last</action>
+    <action>echo WP=\$WP >> $USERCONFIGDIR/last</action>
+    <action>echo MODE=\$MODE >> $USERCONFIGDIR/last</action>
+    <action>echo BACKEND=\$BACKEND >> $USERCONFIGDIR/last</action>
    </button>
    <button>
     <label>$(gettext 'Close')</label>

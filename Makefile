@@ -1,10 +1,13 @@
 PROGNAME = gwp
+CLIPROG = cwp
 PREFIX ?=/usr/local
 SYSCONFDIR ?= ${PREFIX}/etc
 BINDIR = ${PREFIX}/bin
 LIBDIR = ${PREFIX}/lib/${PROGNAME}
 DOCDIR ?= ${PREFIX}/share/doc/${PROGNAME}
-BIN_OBJS = bin/${PROGNAME}
+BIN_OBJS = \
+bin/${PROGNAME} \
+bin/${CLIPROG}
 CONF_OBJS = etc/conf
 DOC_OBJS = README INSTALL COPYING
 
@@ -19,12 +22,16 @@ lib/plugins/feh.sh \
 lib/plugins/esetroot.sh \
 lib/plugins/imlibsetroot.sh
 
-all: bin/gwp
+all: bin/${PROGNAME} bin/${CLIPROG}
 	@echo "Now run \"make install\""
 
-bin/gwp:
+bin/${PROGNAME}:
 	sed "s%@@@SYSCONFDIR@@@%${SYSCONFDIR}%" bin/${PROGNAME}.in \
 		> bin/${PROGNAME}
+
+bin/${CLIPROG}:
+	sed "s%@@@LIBDIR@@@%${LIBDIR}%" bin/${CLIPROG}.in \
+		> bin/${CLIPROG}
 
 install-bin: all
 	install -d ${DESTDIR}${BINDIR}
@@ -58,6 +65,6 @@ install-libs:
 install: install-bin install-conf install-desktop install-libs
 
 clean:
-	rm -f bin/gwp
+	rm -f bin/${PROGNAME} bin/${CLIPROG}
 
 .PHONY: all install-bin install-conf install-libs install clean
