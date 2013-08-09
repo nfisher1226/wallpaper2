@@ -259,7 +259,7 @@ export WP_DLG="
       <label>$(gettext 'Help')</label>
      </menu>
     </menubar>
-    <notebook labels=\"$(gettext 'Images|Options')\" space-fill=\"true\" space-expand=\"true\" height-request=\"200\">
+    <notebook labels=\"$(gettext 'Images|Options')\" space-fill=\"true\" space-expand=\"true\">
      <vbox>
       <hbox>
        <comboboxentry accept=\"directory\" file-monitor=\"true\">
