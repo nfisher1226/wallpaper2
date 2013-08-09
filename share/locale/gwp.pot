@@ -17,27 +17,86 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#.Tab titles
-#: bin/gwp.in:56
+#: ../../bin/gwp.in:102
+msgid "slideshow"
+msgstr ""
+
+#: ../../bin/gwp.in:109 ../../bin/gwp.in:141 ../../bin/gwp.in:201
+#: ../../bin/gwp.in:229 ../../bin/gwp.in:338
+msgid "Close"
+msgstr ""
+
+#: ../../bin/gwp.in:122
+msgid "preferences"
+msgstr ""
+
+#: ../../bin/gwp.in:126
+msgid "Preview height (pixels)"
+msgstr ""
+
+#: ../../bin/gwp.in:158
+msgid "about"
+msgstr ""
+
+#: ../../bin/gwp.in:160
+msgid "About|Credits"
+msgstr ""
+
+#: ../../bin/gwp.in:163
+msgid "A fast and lightweight wallpaper setter"
+msgstr ""
+
+#: ../../bin/gwp.in:166
+msgid ""
+"Gwp is designed to allow the average user to set their desktop wallpaper "
+"with a minimum of fuss. It is designed to be fast, easy, and desktop "
+"independent while providing a simple and streamlined interface."
+msgstr ""
+
+#: ../../bin/gwp.in:176
+msgid "Author"
+msgstr ""
+
+#: ../../bin/gwp.in:182
+msgid "License"
+msgstr ""
+
+#: ../../bin/gwp.in:220
+msgid "Slideshow"
+msgstr ""
+
+#: ../../bin/gwp.in:224
+msgid "Preferences"
+msgstr ""
+
+#: ../../bin/gwp.in:232
+msgid "File"
+msgstr ""
+
+#: ../../bin/gwp.in:248
+msgid "Tools"
+msgstr ""
+
+#: ../../bin/gwp.in:253
+msgid "About"
+msgstr ""
+
+#: ../../bin/gwp.in:257 ../../bin/gwp.in:259
+msgid "Help"
+msgstr ""
+
+#: ../../bin/gwp.in:262
 msgid "Images|Options"
 msgstr ""
 
-#.mode selection frame
-#: bin/gwp.in:84
+#: ../../bin/gwp.in:294
 msgid "Background mode"
 msgstr ""
 
-#.backend selection frame
-#: bin/gwp.in:96
+#: ../../bin/gwp.in:306
 msgid "Backend"
 msgstr ""
 
-#.Apply button
-#: bin/gwp.in:118
+#: ../../bin/gwp.in:329
 msgid "Apply"
-msgstr ""
-
-#.Close button
-#: bin/gwp.in:123
-msgid "Close"
 msgstr ""

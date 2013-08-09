@@ -23,15 +23,13 @@
 VERSION=2.0a2
 SELF="$0"
 PREFIX="$(dirname $(dirname $SELF))"
-PROGNAME=$(basename $SELF)
+PROGNAME=gwp
 TEXTDOMAIN=$PROGNAME
 CONFIGDIR=@@@SYSCONFDIR@@@/$PROGNAME
 USERCONFIGDIR=$HOME/.config/$PROGNAME
 LIBDIR=$PREFIX/lib/$PROGNAME
 . $CONFIGDIR/conf
 [ -f "$USERCONFIGDIR/conf" ] && . "$USERCONFIGDIR/conf"
-export PREFIX PROGNAME TEXTDOMAIN CONFIGDIR USERCONFIGDIR LIBDIR
-
 [ ! -d "$USERCONFIGDIR" ] && install -d "$USERCONFIGDIR"
 [ -f "$USERCONFIGDIR/state" ] && . "$USERCONFIGDIR/state"
 [ "$MODE" = "" ] && MODE=Stretch
@@ -47,65 +45,279 @@ else
   mv $TMPFILE "$USERCONFIGDIR/wp-dirs"
   unset TMPFILE
 fi
-export BACKEND MODE WP_DIR WP
+export \
+  PREFIX \
+  PROGNAME \
+  VERSION \
+  TEXTDOMAIN \
+  CONFIGDIR \
+  USERCONFIGDIR \
+  LIBDIR \
+  HEIGHT \
+  BACKEND \
+  MODE \
+  WP_DIR \
+  WP
+
+# setup menu entries for various graphics programs
+if [ -x "$(which gimp 2>/dev/null)" ];then
+ GIMP='<menuitem icon="gimp"><label>Gimp</label><action>gimp $WP_DIR/$WP &</action></menuitem>'
+fi
+if [ -x "$(which cinepaint 2>/dev/null)" ];then
+ CINEPAINT='<menuitem icon="cinepaint"><label>Cinepaint</label><action>cinepaint $WP_DIR/$WP &</action></menuitem>'
+fi
+if [ -x "$(which inkscape 2>/dev/null)" ];then
+ INKSCAPE='<menuitem icon="inkscape"><label>Inkscape</label><action>inkscape $WP_DIR/$WP &</action></menuitem>'
+fi
+if [ -x "$(which inkscapelite 2>/dev/null)" ];then
+ INKSCAPELITE='<menuitem icon="inkscape"><label>Inkscapelite</label><action>inkscapelite $WP_DIR/$WP &</action></menuitem>'
+fi
+if [ -x "$(which krita 2>/dev/null)" ];then
+ KRITA='<menuitem icon="krita"><label>Krita</label><action>krita $WP_DIR/$WP &</action></menuitem>'
+fi
+if [ -x "$(which xnview 2>/dev/null)" ];then
+ XNVIEW='<menuitem icon="xnview"><label>XnView</label><action>xnview -browse $WP_DIR/$WP &</action></menuitem>'
+fi
+if [ -x "$(which gqview 2>/dev/null)" ];then
+ GQVIEW='<menuitem icon="gqview"><label>Gqview</label><action>gqview $WP_DIR/$WP &</action></menuitem>'
+fi
+if [ -x "$(which gpicview 2>/dev/null)" ];then
+ GPICVIEW='<menuitem icon="gpicview"><label>Gpicview</label><action>gpicview $WP_DIR/$WP &</action></menuitem>'
+fi
+if [ -x "$(which fotox 2>/dev/null)" ];then
+ FOTOX='<menuitem icon="fotox"><label>Fotox</label><action>fotox $WP_DIR/$WP &</action></menuitem>'
+fi
+if [ -x "$(which ristretto 2>/dev/null)" ];then
+ RISTRETTO='<menuitem icon="ristretto"><label>Ristretto</label><action>ristretto $WP_DIR/$WP &</action></menuitem>'
+fi
+if [ -x "$(which eog 2>/dev/null)" ];then
+ EOG='<menuitem icon="eog"><label>Eye of Gnome</label><action>eog $WP_DIR/$WP &</action></menuitem>'
+fi
+if [ -x "$(which feh 2>/dev/null)" ];then
+ FEH='<menuitem icon="feh"><label>feh</label><action>feh $WP_DIR/$WP &</action></menuitem>'
+fi
+
+gwp_slideshow () {
+export SS_DLG="
+<window title=\"$PROGNAME-$VERSION: $(gettext 'slideshow')\" icon=\"multimedia-player\">
+ <vbox>
+  <text use-markup=\"true\">
+   <label>\"<b>To be written...</b>\"</label>
+  </text>
+  <hbox>
+   <button>
+    <label>$(gettext 'Close')</label>
+    <input file stock=\"gtk-close\"></input>
+   </button>
+  </hbox>
+ </vbox>
+</window>
+"
+gtkdialog --program SS_DLG
+}
+export -f gwp_slideshow
+
+gwp_prefs () {
+export PREFS_DLG="
+<window title=\"$PROGNAME-$VERSION: $(gettext 'preferences')\" icon=\"gtk-preferences\">
+ <vbox>
+  <hbox>
+   <text>
+    <label>$(gettext 'Preview height (pixels)')</label>
+   </text>
+   <comboboxtext>
+    <variable>HEIGHT</variable>
+    <default>$HEIGHT</default>
+    <item>150</item>
+    <item>200</item>
+    <item>250</item>
+    <item>300</item>
+    <item>400</item>
+    <item>500</item>
+   </comboboxtext>
+  </hbox>
+  <hbox>
+   <button>
+    <label>$(gettext 'Close')</label>
+    <input file stock=\"gtk-close\"></input>
+   </button>
+  </hbox>
+ </vbox>
+</window>
+"
+TMPFILE=$(mktemp)
+gtkdialog --program PREFS_DLG > $TMPFILE
+. $TMPFILE
+[ ! "$EXIT" = "abort" ] && grep -v 'EXIT=' $TMPFILE > $USERCONFIGDIR/conf
+rm $TMPFILE
+}
+export -f gwp_prefs
+
+gwp_about () {
+export ABOUT_DLG="
+<window title=\"${PROGNAME}-${VERSION}: $(gettext 'about')\" icon=\"gtk-about\">
+ <vbox>
+  <notebook labels=\"$(gettext 'About|Credits')\">
+   <vbox>
+    <text use-markup=\"true\">
+     <label>\"<b>$(gettext 'A fast and lightweight wallpaper setter')</b>\"</label>
+    </text>
+    <text>
+     <label>\"$(gettext 'Gwp is designed to allow the average user to set their desktop wallpaper with a minimum of fuss. It is designed to be fast, easy, and desktop independent while providing a simple and streamlined interface.')\"</label>
+    </text>
+    <button>
+     <label>https://bitbucket.org/nfisher1226/wallpaper2</label>
+     <action>xdg-open https://bitbucket.org/nfisher1226/wallpaper2 &</action>
+    </button>
+   </vbox>
+   <vbox>
+    <hbox>
+     <text space-expand=\"false\">
+      <label>$(gettext 'Author'): Nathan Fisher</label>
+     </text>
+     <hseparator space-expand=\"true\"></hseparator>
+    </hbox>
+    <hbox>
+     <text space-expand=\"false\">
+      <label>$(gettext 'License'): GPLv2</label>
+     </text>
+     <hseparator space-expand=\"true\"></hseparator>
+    </hbox>
+    <hbox>
+     <text space-expand=\"false\">
+      <label>Copyright(©) 2013 Nathan Fisher</label>
+     </text>
+     <hseparator space-expand=\"true\"></hseparator>
+    </hbox>
+    <text><label>\" \"</label></text>
+    <button>
+     <label>http://www.gnu.org/licenses/gpl-2.0.txt</label>
+     <action>xdg-open http://www.gnu.org/licenses/gpl-2.0.txt &</action>
+    </button>
+   </vbox>
+  </notebook>
+  <hbox>
+   <button>
+    <label>$(gettext 'Close')</label>
+    <input file stock=\"gtk-close\"></input>
+   </button>
+  </hbox>
+ </vbox>
+</window>
+"
+gtkdialog --program ABOUT_DLG
+}
+export -f gwp_about
 
 export WP_DLG="
 <window title=\"$PROGNAME-$VERSION\" icon_name=\"preferences-desktop-wallpaper\" resizable=\"false\">
  <vbox>
   <hbox>
-   <notebook labels=\"$(gettext 'Images|Options')\">
-    <vbox>
-     <hbox>
-      <comboboxentry accept=\"directory\" file-monitor=\"true\">
-       <variable>WP_DIR</variable>
-       <default>$WP_DIR</default>
-       <input file>$USERCONFIGDIR/wp-dirs</input>
-       <output file>$USERCONFIGDIR/wp-dirs</output>
-       <action signal=\"activate\">save:WP_DIR</action>
-       <action signal=\"changed\">clear:WP</action>
-       <action signal=\"changed\">refresh:WP</action>
-      </comboboxentry>
-      <button>
-       <input file stock=\"gtk-directory\"></input>
-       <action type=\"fileselect\">WP_DIR</action>
-       <action>save:WP_DIR</action>
-      </button>
-     </hbox>
-     <tree headers-visible=\"false\" selected-row=\"0\" selection-mode=\"1\">
-      <variable>WP</variable>
-      <input>$LIBDIR/buildlist.sh</input>
-      <action signal=\"changed\">$LIBDIR/refresh-preview.sh</action>
-      <action signal=\"changed\" type=\"refresh\">CURRENTIMG</action>
-     </tree>
-    </vbox>
-    <vbox>
-     <hbox>
-      <frame $(gettext 'Background mode')>
-       <comboboxtext>
-        <variable>MODE</variable>
-        <default>$MODE</default>
-        <item>Stretch</item>
-        <item>Scale</item>
-        <item>Center</item>
-        <item>Tile</item>
-       </comboboxtext>
-      </frame>
-     </hbox>
-     <hbox>
-      <frame $(gettext 'Backend')>
-       <comboboxtext>
-        <variable>BACKEND</variable>
-        <default>$BACKEND</default>
-        $(ls -1 $LIBDIR/plugins/*.sh | sed 's%.sh%%g' | \
-          while read B
-          do
-            echo '<item>'$(basename $B)'</item>'
-          done)
-       </comboboxtext>
-      </frame>
-     </hbox>
-    </vbox>
-   </notebook>
+   <vbox>
+    <menubar>
+     <menu>
+      <menuitem icon=\"multimedia-player\">
+       <label>$(gettext 'Slideshow')</label>
+       <action>gwp_slideshow &</action>
+      </menuitem>
+      <menuitem icon=\"gtk-preferences\">
+       <label>$(gettext 'Preferences')</label>
+       <action>gwp_prefs &</action>
+      </menuitem>
+      <separator></separator>
+      <menuitem icon=\"gtk-close\">
+       <label>$(gettext 'Close')</label>
+       <action>EXIT:close</action>
+      </menuitem>
+      <label>$(gettext 'File')</label>
+     </menu>
+     <menu>
+      $EOG
+      $GPICVIEW
+      $FOTOX
+      $RISTRETTO
+      $FEH
+      $XNVIEW
+      $GQVIEW
+      <separator></separator>
+      $GIMP
+      $CINEPAINT
+      $INKSCAPE
+      $INKSCAPELITE
+      $KRITA
+      <label>$(gettext 'Tools')</label>
+     </menu>
+     <menu>
+      <menuitem stock=\"gtk-about\">
+       <action>gwp_about &</action>
+       <label>$(gettext 'About')</label>
+      </menuitem>
+      <menuitem stock=\"gtk-help\">
+       <action>xdg-open https://bitbucket.org/nfisher1226/wallpaper2 &</action>
+       <label>$(gettext 'Help')</label>
+      </menuitem>
+      <label>$(gettext 'Help')</label>
+     </menu>
+    </menubar>
+    <notebook labels=\"$(gettext 'Images|Options')\" space-fill=\"true\" space-expand=\"true\" height-request=\"200\">
+     <vbox>
+      <hbox>
+       <comboboxentry accept=\"directory\" file-monitor=\"true\">
+        <variable>WP_DIR</variable>
+        <default>$WP_DIR</default>
+        <input file>$USERCONFIGDIR/wp-dirs</input>
+        <output file>$USERCONFIGDIR/wp-dirs</output>
+        <action signal=\"activate\">save:WP_DIR</action>
+        <action signal=\"changed\">clear:WP</action>
+        <action signal=\"changed\">refresh:WP</action>
+       </comboboxentry>
+       <button>
+        <input file stock=\"gtk-directory\"></input>
+        <action type=\"fileselect\">WP_DIR</action>
+        <action>save:WP_DIR</action>
+       </button>
+      </hbox>
+      <tree headers-visible=\"false\" selected-row=\"0\" selection-mode=\"1\">
+       <variable>WP</variable>
+       <input>$LIBDIR/buildlist.sh</input>
+       <action signal=\"changed\">$LIBDIR/refresh-preview.sh</action>
+       <action signal=\"changed\" type=\"refresh\">CURRENTIMG</action>
+       <action>$LIBDIR/set-wallpaper.sh</action>
+       <action>echo WP_DIR=\$WP_DIR > $USERCONFIGDIR/last</action>
+       <action>echo WP=\$WP >> $USERCONFIGDIR/last</action>
+       <action>echo MODE=\$MODE >> $USERCONFIGDIR/last</action>
+       <action>echo BACKEND=\$BACKEND >> $USERCONFIGDIR/last</action>
+      </tree>
+     </vbox>
+     <vbox>
+      <hbox>
+       <frame $(gettext 'Background mode')>
+        <comboboxtext>
+         <variable>MODE</variable>
+         <default>$MODE</default>
+         <item>Stretch</item>
+         <item>Scale</item>
+         <item>Center</item>
+         <item>Tile</item>
+        </comboboxtext>
+       </frame>
+      </hbox>
+      <hbox>
+       <frame $(gettext 'Backend')>
+        <comboboxtext>
+         <variable>BACKEND</variable>
+         <default>$BACKEND</default>
+         $(ls -1 $LIBDIR/plugins/*.sh | sed 's%.sh%%g' | \
+           while read B
+           do
+             echo '<item>'$(basename $B)'</item>'
+           done)
+        </comboboxtext>
+       </frame>
+      </hbox>
+     </vbox>
+    </notebook>
+   </vbox>
    <pixmap file-monitor=\"true\" export=\"false\">
     <variable>CURRENTIMG</variable>
     <height>$HEIGHT</height>
@@ -130,6 +342,8 @@ export WP_DLG="
  </vbox>
 </window>
 "
-echo "Gwallpaper-$VERSION"
-echo 'Copyright(©) 2013 Nathan Fisher <nfisher.sr@gmail.com>'
-gtkdialog --program WP_DLG | tee $USERCONFIGDIR/state
+cat << EOF
+${PROGNAME}-${VERSION}
+Copyright(©) 2013 Nathan Fisher <nfisher.sr@gmail.com>
+EOF
+gtkdialog --program WP_DLG > $USERCONFIGDIR/state
