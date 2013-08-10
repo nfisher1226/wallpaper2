@@ -12,8 +12,6 @@ CONF_OBJS = etc/conf
 DOC_OBJS = README INSTALL COPYING
 
 LIB_OBJS = \
-lib/buildlist.sh \
-lib/refresh-preview.sh \
 lib/set-wallpaper.sh
 
 PLUGIN_OBJS = \

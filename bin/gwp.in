@@ -32,10 +32,10 @@ LIBDIR=$PREFIX/lib/$PROGNAME
 [ -f "$USERCONFIGDIR/conf" ] && . "$USERCONFIGDIR/conf"
 [ ! -d "$USERCONFIGDIR" ] && install -d "$USERCONFIGDIR"
 [ -f "$USERCONFIGDIR/state" ] && . "$USERCONFIGDIR/state"
-[ "$MODE" = "" ] && MODE=Stretch
-[ "$BACKEND" = "" ] && BACKEND=$DEFAULT_BACKEND
-[ "$WP_DIR" = "" ] && \
-  WP_DIR="dirname $(find $DEFAULT_WP_DIR -type f | sort | head -n 1)"
+[[ -z "$MODE" ]] && MODE=Stretch
+[[ -z "$BACKEND" ]] && BACKEND=$DEFAULT_BACKEND
+[[ -z "$WP_DIR" ]] && \
+  WP_DIR="$(dirname $(find $DEFAULT_WP_DIR -type f | sort | head -n 1))"
 if [ ! -f "$USERCONFIGDIR/wp-dirs" ] ; then
   dirname $(find $DEFAULT_WP_DIR -type f | sort | head -n 1) > \
     "$USERCONFIGDIR/wp-dirs"
@@ -59,43 +59,65 @@ export \
   WP_DIR \
   WP
 
+# Build our list of image files
+build_list () {
+[ -d "$WP_DIR" ] && find "$WP_DIR" \
+  -maxdepth 1 \
+  -type f \
+  \( -iname "*.png" \
+  -o -iname "*.jp*g" \
+  -o -iname "*.svg" \
+  -o -iname "*.tif*" \) \
+  -exec basename '{}' \;
+}
+export -f build_list
+
+# Refresh the preview image
+refresh_preview () {
+[ -f "$WP_DIR/$WP" ] && \
+   [ "$(egrep '.png|.jpg|.jpeg|.PNG|.JPG|.svg' <<< ${WP})" ] && \
+   ln -sf "$WP_DIR/$WP" $USERCONFIGDIR/current.png
+}
+export -f refresh_preview
+
 # setup menu entries for various graphics programs
-if [ -x "$(which gimp 2>/dev/null)" ];then
- GIMP='<menuitem icon="gimp"><label>Gimp</label><action>gimp $WP_DIR/$WP &</action></menuitem>'
-fi
-if [ -x "$(which cinepaint 2>/dev/null)" ];then
- CINEPAINT='<menuitem icon="cinepaint"><label>Cinepaint</label><action>cinepaint $WP_DIR/$WP &</action></menuitem>'
-fi
-if [ -x "$(which inkscape 2>/dev/null)" ];then
- INKSCAPE='<menuitem icon="inkscape"><label>Inkscape</label><action>inkscape $WP_DIR/$WP &</action></menuitem>'
-fi
-if [ -x "$(which inkscapelite 2>/dev/null)" ];then
- INKSCAPELITE='<menuitem icon="inkscape"><label>Inkscapelite</label><action>inkscapelite $WP_DIR/$WP &</action></menuitem>'
-fi
-if [ -x "$(which krita 2>/dev/null)" ];then
- KRITA='<menuitem icon="krita"><label>Krita</label><action>krita $WP_DIR/$WP &</action></menuitem>'
-fi
-if [ -x "$(which xnview 2>/dev/null)" ];then
- XNVIEW='<menuitem icon="xnview"><label>XnView</label><action>xnview -browse $WP_DIR/$WP &</action></menuitem>'
-fi
-if [ -x "$(which gqview 2>/dev/null)" ];then
- GQVIEW='<menuitem icon="gqview"><label>Gqview</label><action>gqview $WP_DIR/$WP &</action></menuitem>'
-fi
-if [ -x "$(which gpicview 2>/dev/null)" ];then
- GPICVIEW='<menuitem icon="gpicview"><label>Gpicview</label><action>gpicview $WP_DIR/$WP &</action></menuitem>'
-fi
-if [ -x "$(which fotox 2>/dev/null)" ];then
- FOTOX='<menuitem icon="fotox"><label>Fotox</label><action>fotox $WP_DIR/$WP &</action></menuitem>'
-fi
-if [ -x "$(which ristretto 2>/dev/null)" ];then
- RISTRETTO='<menuitem icon="ristretto"><label>Ristretto</label><action>ristretto $WP_DIR/$WP &</action></menuitem>'
-fi
-if [ -x "$(which eog 2>/dev/null)" ];then
- EOG='<menuitem icon="eog"><label>Eye of Gnome</label><action>eog $WP_DIR/$WP &</action></menuitem>'
-fi
-if [ -x "$(which feh 2>/dev/null)" ];then
- FEH='<menuitem icon="feh"><label>feh</label><action>feh $WP_DIR/$WP &</action></menuitem>'
-fi
+editor_programs () {
+while read PROG
+  do CMD=$(cut -f 3 -d '|' <<< ${PROG})
+  if [ -x "$(which $CMD 2>/dev/null)" ]
+    then ICON=$(cut -f 1 -d '|' <<< ${PROG})
+    NAME=$(cut -f 2 -d '|' <<< ${PROG})
+    echo '<menuitem icon='\"$ICON\"'><label>'$NAME'</label><action>'$CMD \"\$WP_DIR/\$WP\" \&'</action></menuitem>'
+  fi
+done << EOF
+gimp|Gimp|gimp
+cinepaint|Cinepaint|cinepaint
+krita|Krita|krita
+mtpaint|mtPaint|mtpaint
+inkscape|Inkscape|inkscape
+inkscape|Inkscapelite|inkscapelite
+EOF
+}
+
+viewer_programs () {
+while read PROG
+  do
+  CMD=$(cut -f 3 -d '|' <<< ${PROG})
+  if [ -x "$(which $CMD 2>/dev/null)" ]
+    then ICON=$(cut -f 1 -d '|' <<< ${PROG})
+    NAME=$(cut -f 2 -d '|' <<< ${PROG})
+    echo '<menuitem icon='\"$ICON\"'><label>'$NAME'</label><action>'$CMD \"\$WP_DIR/\$WP\" \&'</action></menuitem>'
+  fi
+done << EOF
+xnview|XnView|xnview
+gqview|Gqview|gqview
+gpicview|Gpicview|gpicview
+fotox|Fotox|fotox
+ristretto|Ristretto|ristretto
+eog|Eog|eog
+feh|Feh|feh
+EOF
+}
 
 gwp_slideshow () {
 export SS_DLG="
@@ -232,19 +254,9 @@ export WP_DLG="
       <label>$(gettext 'File')</label>
      </menu>
      <menu>
-      $EOG
-      $GPICVIEW
-      $FOTOX
-      $RISTRETTO
-      $FEH
-      $XNVIEW
-      $GQVIEW
+      $(viewer_programs)
       <separator></separator>
-      $GIMP
-      $CINEPAINT
-      $INKSCAPE
-      $INKSCAPELITE
-      $KRITA
+      $(editor_programs)
       <label>$(gettext 'Tools')</label>
      </menu>
      <menu>
@@ -279,8 +291,8 @@ export WP_DLG="
       </hbox>
       <tree headers-visible=\"false\" selected-row=\"0\" selection-mode=\"1\">
        <variable>WP</variable>
-       <input>$LIBDIR/buildlist.sh</input>
-       <action signal=\"changed\">$LIBDIR/refresh-preview.sh</action>
+       <input>build_list</input>
+       <action signal=\"changed\">refresh_preview</action>
        <action signal=\"changed\" type=\"refresh\">CURRENTIMG</action>
        <action>$LIBDIR/set-wallpaper.sh</action>
        <action>echo WP_DIR=\$WP_DIR > $USERCONFIGDIR/last</action>
