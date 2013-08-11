@@ -1,0 +1,14 @@
+pixmap_path '@@@CONFDIR@@@/gwp/theme'
+
+style "styleBgBlack" {
+	bg[NORMAL] = "#000000"
+}
+style "styleBgWhite" {
+	bg[NORMAL] = "#ffffff"
+}
+style "styleBgPixmap" {
+	bg_pixmap[NORMAL] = 'stock-transparency-24.png'
+}
+widget "*BgBlack" style "styleBgBlack"
+widget "*BgWhite" style "styleBgWhite"
+widget "*BgPixmap" style "styleBgPixmap"

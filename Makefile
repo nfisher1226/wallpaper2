@@ -10,6 +10,7 @@ BIN_OBJS = \
 bin/${PROGNAME} \
 bin/${CLIPROG}
 CONF_OBJS = etc/conf
+THEME_OBJS = etc/theme/gtkrc etc/theme/stock-transparency-24.png
 DOC_OBJS = README INSTALL COPYING
 
 LIB_OBJS = \
@@ -37,10 +38,16 @@ install-bin: all
 	for OBJ in ${BIN_OBJS} ; \
 		do install -m 755 $${OBJ} ${DESTDIR}${BINDIR} ; done
 
-install-conf:
-	install -d ${DESTDIR}${SYSCONFDIR}/${PROGNAME}
+install-conf: etc/theme/gtkrc
+	install -d ${DESTDIR}${SYSCONFDIR}/${PROGNAME}/theme
 	for OBJ in ${CONF_OBJS} ; \
 		do install -m 644 $${OBJ} ${DESTDIR}${SYSCONFDIR}/${PROGNAME} ; done
+	for OBJ in ${THEME_OBJS} ; \
+		do install -m 644 $${OBJ} ${DESTDIR}${SYSCONFDIR}/${PROGNAME}/theme ; done
+
+etc/theme/gtkrc:
+	sed "s%@@@CONFDIR@@@%${SYSCONFDIR}/%" etc/theme/gtkrc.in \
+		> etc/theme/gtkrc
 
 install-desktop:
 	install -d ${DESTDIR}${PREFIX}/share/applications
@@ -64,7 +71,7 @@ install-libs:
 install: install-bin install-conf install-desktop install-libs
 
 clean:
-	rm -f bin/${PROGNAME} bin/${CLIPROG}
+	rm -f bin/${PROGNAME} bin/${CLIPROG} etc/theme/gtkrc
 
 petpkg: puppy/${PROGNAME}-${VERSION}.pet
 

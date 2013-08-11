@@ -29,6 +29,7 @@ CONFIGDIR=@@@SYSCONFDIR@@@/$PROGNAME
 USERCONFIGDIR=$HOME/.config/$PROGNAME
 LIBDIR=$PREFIX/lib/$PROGNAME
 . $CONFIGDIR/conf
+export GTK2_RC_FILES=${CONFIGDIR}/gtkrc:~/.gtkrc-2.0
 [ -f "$USERCONFIGDIR/conf" ] && . "$USERCONFIGDIR/conf"
 [ ! -d "$USERCONFIGDIR" ] && install -d "$USERCONFIGDIR"
 [ -f "$USERCONFIGDIR/state" ] && . "$USERCONFIGDIR/state"
@@ -58,6 +59,9 @@ export \
   MODE \
   WP_DIR \
   WP
+
+# get the width for the preview area
+WIDTH=$(echo $[$HEIGHT * 16 / 10] | cut -f 1 -d '.')
 
 # Build our list of image files
 build_list () {
@@ -124,6 +128,13 @@ feh|Feh|feh
 EOF
 }
 
+# Refresh the status text
+status_refresh () {
+. $USERCONFIGDIR/last
+echo 'Current:' $WP
+}
+export -f status_refresh
+
 gwp_slideshow () {
 export SS_DLG="
 <window title=\"$PROGNAME-$VERSION: $(gettext 'slideshow')\" icon=\"multimedia-player\">
@@ -146,12 +157,13 @@ export -f gwp_slideshow
 
 gwp_prefs () {
 export PREFS_DLG="
-<window title=\"$PROGNAME-$VERSION: $(gettext 'preferences')\" icon=\"gtk-preferences\">
+<window title=\"$PROGNAME-$VERSION: $(gettext 'preferences')\" icon=\"gtk-preferences\" window-position=\"2\">
  <vbox>
   <hbox>
-   <text>
+   <text space-expand=\"false\">
     <label>$(gettext 'Preview height (pixels)')</label>
    </text>
+   <hseparator space-expand=\"true\"></hseparator>
    <comboboxtext>
     <variable>HEIGHT</variable>
     <default>$HEIGHT</default>
@@ -276,7 +288,7 @@ export WP_DLG="
       <label>$(gettext 'Help')</label>
      </menu>
     </menubar>
-    <notebook labels=\"$(gettext 'Images|Options')\" space-fill=\"true\" space-expand=\"true\">
+    <notebook labels=\"$(gettext 'Images')|$(gettext 'Options')\" space-fill=\"true\" space-expand=\"true\">
      <vbox>
       <hbox>
        <comboboxentry accept=\"directory\" file-monitor=\"true\">
@@ -304,11 +316,12 @@ export WP_DLG="
        <action>echo WP=\$WP >> $USERCONFIGDIR/last</action>
        <action>echo MODE=\$MODE >> $USERCONFIGDIR/last</action>
        <action>echo BACKEND=\$BACKEND >> $USERCONFIGDIR/last</action>
+       <action type=\"refresh\">STATUS</action>
       </tree>
      </vbox>
      <vbox>
       <hbox>
-       <frame $(gettext 'Background mode')>
+       <frame $(gettext 'Mode')>
         <comboboxtext>
          <variable>MODE</variable>
          <default>$MODE</default>
@@ -325,23 +338,31 @@ export WP_DLG="
          <variable>BACKEND</variable>
          <default>$BACKEND</default>
          $(ls -1 $LIBDIR/plugins/*.sh | sed 's%.sh%%g' | \
-           while read B
-           do
-             echo '<item>'$(basename $B)'</item>'
-           done)
+           while read B ; do echo '<item>'$(basename $B)'</item>' ; done)
         </comboboxtext>
        </frame>
       </hbox>
      </vbox>
     </notebook>
    </vbox>
-   <pixmap file-monitor=\"true\" export=\"false\">
-    <variable>CURRENTIMG</variable>
-    <height>$HEIGHT</height>
-    <input file>$USERCONFIGDIR/current.png</input>
-   </pixmap>
+   <vbox width-request=\"$WIDTH\" space-expand=\"true\" space-fill=\"true\">
+    <eventbox name=\"BgPixmap\">
+     <pixmap file-monitor=\"true\" export=\"false\">
+      <variable>CURRENTIMG</variable>
+      <height>$HEIGHT</height>
+      <input file>$USERCONFIGDIR/current.png</input>
+     </pixmap>
+    </eventbox>
+   </vbox>
   </hbox>
   <hbox>
+   <text space-expand=\"false\">
+    <variable>STATUS</variable>
+    <label>$(status_refresh)</label>
+    <input>status_refresh</input>
+   </text>
+   <hseparator space-expand=\"true\"></hseparator>
+   <vseparator></vseparator>
    <button>
     <label>$(gettext 'Apply')</label>
     <input file stock=\"gtk-apply\"></input>
@@ -350,6 +371,7 @@ export WP_DLG="
     <action>echo WP=\$WP >> $USERCONFIGDIR/last</action>
     <action>echo MODE=\$MODE >> $USERCONFIGDIR/last</action>
     <action>echo BACKEND=\$BACKEND >> $USERCONFIGDIR/last</action>
+    <action type=\"refresh\">STATUS</action>
    </button>
    <button>
     <label>$(gettext 'Close')</label>
