@@ -80,7 +80,9 @@ refresh_preview () {
 }
 export -f refresh_preview
 
-# setup menu entries for various graphics programs
+# setup menu entries for various graphics editors
+# This function reads from the redirection below in the format
+# icon-name|Program-name|executable
 editor_programs () {
 while read PROG
   do CMD=$(cut -f 3 -d '|' <<< ${PROG})
@@ -99,6 +101,9 @@ inkscape|Inkscapelite|inkscapelite
 EOF
 }
 
+# setup menu entries for various graphics viewers
+# This function reads from the redirection below in the format
+# icon-name|Program-name|executable
 viewer_programs () {
 while read PROG
   do

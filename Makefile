@@ -1,4 +1,5 @@
 PROGNAME = gwp
+VERSION = 2.0a2
 CLIPROG = cwp
 PREFIX ?=/usr/local
 SYSCONFDIR ?= ${PREFIX}/etc
@@ -65,4 +66,31 @@ install: install-bin install-conf install-desktop install-libs
 clean:
 	rm -f bin/${PROGNAME} bin/${CLIPROG}
 
-.PHONY: all install-bin install-conf install-libs install clean
+petpkg: puppy/${PROGNAME}-${VERSION}.pet
+
+puppy/${PROGNAME}-${VERSION}.pet:
+	$(MAKE) PREFIX=/usr SYSCONFDIR=/etc \
+		DESTDIR=puppy/${PROGNAME}-${VERSION} install
+	sed -e "s/PROGNAME/${PROGNAME}/g" -e "s/VERSION/${VERSION}/g" \
+		-e "s/SIZE/$$(du -hc puppy/${PROGNAME}-${VERSION} | tail -n 1 | \
+		cut -f 1)/" puppy/pet.specs.in > \
+		puppy/${PROGNAME}-${VERSION}/pet.specs
+	cd puppy ; tar czf ${PROGNAME}-${VERSION}.pet ${PROGNAME}-${VERSION}
+	echo $$(md5sum puppy/${PROGNAME}-${VERSION}.pet | cut -f 1 -d ' ') \
+		>> puppy/${PROGNAME}-${VERSION}.pet
+	@echo
+	@echo 'Pet package created as puppy/${PROGNAME}-${VERSION}.pet'
+
+petclean: clean
+	rm -rf puppy/${PROGNAME}-${VERSION}.pet
+	rm -rf puppy/${PROGNAME}-${VERSION}
+
+.PHONY: \
+all \
+install-bin \
+install-conf \
+install-libs \
+install \
+clean \
+petpkg \
+petclean
