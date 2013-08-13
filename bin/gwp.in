@@ -29,7 +29,7 @@ CONFIGDIR=@@@SYSCONFDIR@@@/$PROGNAME
 USERCONFIGDIR=$HOME/.config/$PROGNAME
 LIBDIR=$PREFIX/lib/$PROGNAME
 . $CONFIGDIR/conf
-export GTK2_RC_FILES=${CONFIGDIR}/gtkrc:~/.gtkrc-2.0
+export GTK2_RC_FILES=${CONFIGDIR}/theme/gtkrc:~/.gtkrc-2.0
 [ -f "$USERCONFIGDIR/conf" ] && . "$USERCONFIGDIR/conf"
 [ ! -d "$USERCONFIGDIR" ] && install -d "$USERCONFIGDIR"
 [ -f "$USERCONFIGDIR/state" ] && . "$USERCONFIGDIR/state"
@@ -46,6 +46,24 @@ else
   mv $TMPFILE "$USERCONFIGDIR/wp-dirs"
   unset TMPFILE
 fi
+
+# This sets the background for the preview area
+[[ -z "$PREVIEW_BACKGROUND" ]] && PREVIEW_BACKGROUND=Pattern
+case $PREVIEW_BACKGROUND in
+Black)
+  eventbox_name=BgBlack
+;;
+White)
+  eventbox_name=BgWhite
+;;
+Pattern)
+  eventbox_name=BgPixmap
+;;
+*)
+  eventbox_name=BgNormal
+;;
+esac
+
 export \
   PREFIX \
   PROGNAME \
@@ -58,7 +76,11 @@ export \
   BACKEND \
   MODE \
   WP_DIR \
-  WP
+  WP \
+  PREVIEW_BACKGROUND
+
+# Read in functions
+. $LIBDIR/gwp.sh
 
 # get the width for the preview area
 WIDTH=$(echo $[$HEIGHT * 16 / 10] | cut -f 1 -d '.')
@@ -176,6 +198,32 @@ export PREFS_DLG="
    </comboboxtext>
   </hbox>
   <hbox>
+   <text space-expand=\"false\">
+    <label>$(gettext 'Preview background')</label>
+   </text>
+   <hseparator space-expand=\"true\"></hseparator>
+   <comboboxtext>
+    <variable>PREVIEW_BACKGROUND</variable>
+    <default>$PREVIEW_BACKGROUND</default>
+    <item>Black</item>
+    <item>White</item>
+    <item>Pattern</item>
+    <item>none</item>
+   </comboboxtext>
+  </hbox>
+  <hbox>
+   <text space-expand=\"false\">
+    <label>$(gettext 'Backend')</label>
+   </text>
+   <hseparator space-expand=\"true\"></hseparator>
+   <comboboxtext>
+    <variable>BACKEND</variable>
+    <default>$BACKEND</default>
+    $(ls -1 $LIBDIR/plugins/*.sh | sed 's%.sh%%g' | \
+      while read B ; do echo '<item>'$(basename $B)'</item>' ; done)
+   </comboboxtext>
+  </hbox>
+  <hbox>
    <button>
     <label>$(gettext 'Close')</label>
     <input file stock=\"gtk-close\"></input>
@@ -249,9 +297,12 @@ gtkdialog --program ABOUT_DLG
 export -f gwp_about
 
 export WP_DLG="
-<window title=\"$PROGNAME-$VERSION\" icon_name=\"preferences-desktop-wallpaper\" resizable=\"false\">
+<window title=\"$PROGNAME-$VERSION\" icon_name=\"preferences-desktop-wallpaper\" resizable=\"false\" border-width=\"0\">
  <vbox>
   <hbox>
+   <pixmap>
+    <input file>${CONFIGDIR}/theme/vspace.png</input>
+   </pixmap>
    <vbox>
     <menubar>
      <menu>
@@ -288,65 +339,37 @@ export WP_DLG="
       <label>$(gettext 'Help')</label>
      </menu>
     </menubar>
-    <notebook labels=\"$(gettext 'Images')|$(gettext 'Options')\" space-fill=\"true\" space-expand=\"true\">
-     <vbox>
-      <hbox>
-       <comboboxentry accept=\"directory\" file-monitor=\"true\">
-        <variable>WP_DIR</variable>
-        <default>$WP_DIR</default>
-        <input file>$USERCONFIGDIR/wp-dirs</input>
-        <output file>$USERCONFIGDIR/wp-dirs</output>
-        <action signal=\"activate\">save:WP_DIR</action>
-        <action signal=\"changed\">clear:WP</action>
-        <action signal=\"changed\">refresh:WP</action>
-       </comboboxentry>
-       <button>
-        <input file stock=\"gtk-directory\"></input>
-        <action type=\"fileselect\">WP_DIR</action>
-        <action>save:WP_DIR</action>
-       </button>
-      </hbox>
-      <tree headers-visible=\"false\" selected-row=\"0\" selection-mode=\"1\">
-       <variable>WP</variable>
-       <input>build_list</input>
-       <action signal=\"changed\">refresh_preview</action>
-       <action signal=\"changed\" type=\"refresh\">CURRENTIMG</action>
-       <action>$LIBDIR/set-wallpaper.sh</action>
-       <action>echo WP_DIR=\$WP_DIR > $USERCONFIGDIR/last</action>
-       <action>echo WP=\$WP >> $USERCONFIGDIR/last</action>
-       <action>echo MODE=\$MODE >> $USERCONFIGDIR/last</action>
-       <action>echo BACKEND=\$BACKEND >> $USERCONFIGDIR/last</action>
-       <action type=\"refresh\">STATUS</action>
-      </tree>
-     </vbox>
-     <vbox>
-      <hbox>
-       <frame $(gettext 'Mode')>
-        <comboboxtext>
-         <variable>MODE</variable>
-         <default>$MODE</default>
-         <item>Stretch</item>
-         <item>Scale</item>
-         <item>Center</item>
-         <item>Tile</item>
-        </comboboxtext>
-       </frame>
-      </hbox>
-      <hbox>
-       <frame $(gettext 'Backend')>
-        <comboboxtext>
-         <variable>BACKEND</variable>
-         <default>$BACKEND</default>
-         $(ls -1 $LIBDIR/plugins/*.sh | sed 's%.sh%%g' | \
-           while read B ; do echo '<item>'$(basename $B)'</item>' ; done)
-        </comboboxtext>
-       </frame>
-      </hbox>
-     </vbox>
-    </notebook>
+    <hbox>
+     <comboboxentry accept=\"directory\" file-monitor=\"true\">
+      <variable>WP_DIR</variable>
+      <default>$WP_DIR</default>
+      <input file>$USERCONFIGDIR/wp-dirs</input>
+      <output file>$USERCONFIGDIR/wp-dirs</output>
+      <action signal=\"activate\">save:WP_DIR</action>
+      <action signal=\"changed\">clear:WP</action>
+      <action signal=\"changed\">refresh:WP</action>
+     </comboboxentry>
+     <button tooltip-text=\"$(gettext 'Add another directory to the list')\">
+      <input file stock=\"gtk-directory\"></input>
+      <action type=\"fileselect\">WP_DIR</action>
+      <action>save:WP_DIR</action>
+     </button>
+    </hbox>
+    <tree headers-visible=\"false\" selected-row=\"0\" selection-mode=\"1\" tooltip-text=\"$(gettext 'Doubleclick to set')\">
+     <variable>WP</variable>
+     <input>build_list</input>
+     <action signal=\"changed\">refresh_preview</action>
+     <action signal=\"changed\" type=\"refresh\">CURRENTIMG</action>
+     <action>set_wallpaper</action>
+     <action>echo WP_DIR=\$WP_DIR > $USERCONFIGDIR/last</action>
+     <action>echo WP=\$WP >> $USERCONFIGDIR/last</action>
+     <action>echo MODE=\$MODE >> $USERCONFIGDIR/last</action>
+     <action>echo BACKEND=\$BACKEND >> $USERCONFIGDIR/last</action>
+     <action type=\"refresh\">STATUS</action>
+    </tree>
    </vbox>
    <vbox width-request=\"$WIDTH\" space-expand=\"true\" space-fill=\"true\">
-    <eventbox name=\"BgPixmap\">
+    <eventbox name=\"$eventbox_name\">
      <pixmap file-monitor=\"true\" export=\"false\">
       <variable>CURRENTIMG</variable>
       <height>$HEIGHT</height>
@@ -354,8 +377,14 @@ export WP_DLG="
      </pixmap>
     </eventbox>
    </vbox>
+   <pixmap>
+    <input file>${CONFIGDIR}/theme/vspace.png</input>
+   </pixmap>
   </hbox>
   <hbox>
+   <pixmap>
+    <input file>${CONFIGDIR}/theme/vspace.png</input>
+   </pixmap>
    <text space-expand=\"false\">
     <variable>STATUS</variable>
     <label>$(status_refresh)</label>
@@ -363,20 +392,31 @@ export WP_DLG="
    </text>
    <hseparator space-expand=\"true\"></hseparator>
    <vseparator></vseparator>
-   <button>
+   <comboboxtext tooltip-text=\"$(gettext 'Set the way the image should be displayed')\">
+    <variable>MODE</variable>
+    <default>$MODE</default>
+    <item>Stretch</item>
+    <item>Scale</item>
+    <item>Center</item>
+    <item>Tile</item>
+   </comboboxtext>
+   <button tooltip-text=\"$(gettext 'Set current selection')\">
     <label>$(gettext 'Apply')</label>
     <input file stock=\"gtk-apply\"></input>
-    <action>$LIBDIR/set-wallpaper.sh</action>
+    <action>set_wallpaper</action>
     <action>echo WP_DIR=\$WP_DIR > $USERCONFIGDIR/last</action>
     <action>echo WP=\$WP >> $USERCONFIGDIR/last</action>
     <action>echo MODE=\$MODE >> $USERCONFIGDIR/last</action>
     <action>echo BACKEND=\$BACKEND >> $USERCONFIGDIR/last</action>
     <action type=\"refresh\">STATUS</action>
    </button>
-   <button>
+   <button tooltip-text=\"$(gettext 'Exit program')\">
     <label>$(gettext 'Close')</label>
     <input file stock=\"gtk-close\"></input>
    </button>
+   <pixmap>
+    <input file>${CONFIGDIR}/theme/vspace.png</input>
+   </pixmap>
   </hbox>
  </vbox>
 </window>

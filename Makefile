@@ -9,18 +9,18 @@ DOCDIR ?= ${PREFIX}/share/doc/${PROGNAME}
 BIN_OBJS = \
 bin/${PROGNAME} \
 bin/${CLIPROG}
-CONF_OBJS = etc/conf
-THEME_OBJS = etc/theme/gtkrc etc/theme/stock-transparency-24.png
+CONF_OBJS = conf
+THEME_OBJS = gtkrc stock-transparency-24.png vspace.png
 DOC_OBJS = README INSTALL COPYING
 
 LIB_OBJS = \
-lib/set-wallpaper.sh
+gwp.sh
 
 PLUGIN_OBJS = \
-lib/plugins/rox.sh \
-lib/plugins/feh.sh \
-lib/plugins/esetroot.sh \
-lib/plugins/imlibsetroot.sh
+rox.sh \
+feh.sh \
+esetroot.sh \
+imlibsetroot.sh
 
 all: bin/${PROGNAME} bin/${CLIPROG}
 	@echo "Now run \"make install\""
@@ -30,8 +30,9 @@ bin/${PROGNAME}:
 		> bin/${PROGNAME}
 
 bin/${CLIPROG}:
-	sed "s%@@@LIBDIR@@@%${LIBDIR}%" bin/${CLIPROG}.in \
-		> bin/${CLIPROG}
+	sed -e "s%@@@LIBDIR@@@%${LIBDIR}%" \
+		-e "s%@@@SYSCONFDIR@@@%${SYSCONFDIR}%" \
+		bin/${CLIPROG}.in > bin/${CLIPROG}
 
 install-bin: all
 	install -d ${DESTDIR}${BINDIR}
@@ -41,9 +42,11 @@ install-bin: all
 install-conf: etc/theme/gtkrc
 	install -d ${DESTDIR}${SYSCONFDIR}/${PROGNAME}/theme
 	for OBJ in ${CONF_OBJS} ; \
-		do install -m 644 $${OBJ} ${DESTDIR}${SYSCONFDIR}/${PROGNAME} ; done
+		do install -m 644 etc/$${OBJ} \
+			${DESTDIR}${SYSCONFDIR}/${PROGNAME} ; done
 	for OBJ in ${THEME_OBJS} ; \
-		do install -m 644 $${OBJ} ${DESTDIR}${SYSCONFDIR}/${PROGNAME}/theme ; done
+		do install -m 644 etc/theme/$${OBJ} \
+			${DESTDIR}${SYSCONFDIR}/${PROGNAME}/theme ; done
 
 etc/theme/gtkrc:
 	sed "s%@@@CONFDIR@@@%${SYSCONFDIR}/%" etc/theme/gtkrc.in \
@@ -62,10 +65,11 @@ install-doc:
 install-libs:
 	install -d ${DESTDIR}${LIBDIR}
 	for OBJ in ${LIB_OBJS} ; \
-		do install -m 755 $${OBJ} ${DESTDIR}${LIBDIR} ; done
+		do install -m 644 lib/$${OBJ} ${DESTDIR}${LIBDIR} ; done
 	install -d ${DESTDIR}${LIBDIR}/plugins
 	for OBJ in ${PLUGIN_OBJS} ; \
-		do install -m 644 $${OBJ} ${DESTDIR}${LIBDIR}/plugins ; done
+		do install -m 644 lib/plugins/$${OBJ} \
+			${DESTDIR}${LIBDIR}/plugins ; done
 
 
 install: install-bin install-conf install-desktop install-libs

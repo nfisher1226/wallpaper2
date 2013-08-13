@@ -1,9 +1,21 @@
 #!/bin/sh
-LIBDIR=@@@LIBDIR@@@
+SELF="$0"
+PREFIX="$(dirname $(dirname $SELF))"
+PROGNAME=gwp
+TEXTDOMAIN=$PROGNAME
+CONFIGDIR=@@@SYSCONFDIR@@@/$PROGNAME
+USERCONFIGDIR=$HOME/.config/$PROGNAME
+LIBDIR=$PREFIX/lib/$PROGNAME
+. $CONFIGDIR/conf
+[ -f "$USERCONFIGDIR/conf" ] && . "$USERCONFIGDIR/conf"
+
+# Read in functions
+. $LIBDIR/gwp.sh
+
 case "$1" in
 --last)
-. $HOME/.config/gwp/last
+. $USERCONFIGDIR/last
 export BACKEND MODE WP WP_DIR LIBDIR
-$LIBDIR/set-wallpaper.sh
+set_wallpaper
 ;;
 esac
