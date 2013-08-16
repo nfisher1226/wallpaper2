@@ -47,6 +47,13 @@ else
   unset TMPFILE
 fi
 
+# Setup the slideshow
+SLIDESHOWDIR=$USERCONFIGDIR/slideshows
+[ ! -d "$SLIDESHOWDIR" ] && install -d "$SLIDESHOWDIR" \
+  && touch "$SLIDESHOWDIR/default"
+SLIDESHOW_TEMPFILE=$(mktemp)
+cat $SLIDESHOWDIR/$CURRENT_SLIDESHOW >> $SLIDESHOW_TEMPFILE
+
 # This sets the background for the preview area
 [[ -z "$PREVIEW_BACKGROUND" ]] && PREVIEW_BACKGROUND=Pattern
 case $PREVIEW_BACKGROUND in
@@ -64,6 +71,43 @@ Pattern)
 ;;
 esac
 
+# Get the correct mode
+# Harder to do now with radiobuttons than with combobox, but worth it?
+if [ "$STRETCH" = "true" ]
+  then STRETCH_ACTIVE=true ; MODE=Stretch
+  else STRETCH_ACTIVE=false
+fi
+if [ "$SCALE" = "true" ]
+  then SCALE_ACTIVE=true ; MODE=Scale
+  else SCALE_ACTIVE=false
+fi
+if [ "$STRETCH" = "true" ]
+  then CENTER_ACTIVE=true ; MODE=Center
+  else CENTER_ACTIVE=false
+fi
+if [ "$TILE" = "true" ]
+  then TILE_ACTIVE=true ; MODE=Tile
+  else TILE_ACTIVE=false
+fi
+
+# Get the correct backend (as above)
+if [ "$FEH" = "true" ]
+  then FEH_ACTIVE=true ; BACKEND=feh
+  else FEH_ACTIVE=false
+fi
+if [ "$ROX" = "true" ]
+  then ROX_ACTIVE=true ; BACKEND=rox
+  else ROX_ACTIVE=false
+fi
+if [ "$IMLIBSETROOT" = "true" ]
+  then IMLIBSETROOT_ACTIVE=true ; BACKEND=imlibsetroot
+  else IMLIBSETROOT_ACTIVE=false
+fi
+if [ "$ESETROOT" = "true" ]
+  then ESETROOT_ACTIVE=true ; BACKEND=esetroot
+  else ESETROOT_ACTIVE=false
+fi
+
 export \
   PREFIX \
   PROGNAME \
@@ -77,7 +121,10 @@ export \
   MODE \
   WP_DIR \
   WP \
-  PREVIEW_BACKGROUND
+  PREVIEW_BACKGROUND \
+  SLIDESHOWDIR \
+  CURRENT_SLIDESHOW \
+  SLIDESHOW_TEMPFILE
 
 # Read in functions
 . $LIBDIR/gwp.sh
@@ -94,15 +141,15 @@ build_list () {
   -o -iname "*.jp*g" \
   -o -iname "*.svg" \
   -o -iname "*.tif*" \) \
-  -exec basename '{}' \;
+  | while read f ; do echo "$(basename $f)|$f" ; done
 }
 export -f build_list
 
 # Refresh the preview image
 refresh_preview () {
-[ -f "$WP_DIR/$WP" ] && \
+[ -f "$WP" ] && \
    [ "$(egrep '.png|.jpg|.jpeg|.PNG|.JPG|.svg' <<< ${WP})" ] && \
-   ln -sf "$WP_DIR/$WP" $USERCONFIGDIR/current.png
+   ln -sf "$WP" $USERCONFIGDIR/current.png
 }
 export -f refresh_preview
 
@@ -143,19 +190,34 @@ done << EOF
 xnview|XnView|xnview
 gqview|Gqview|gqview
 gpicview|Gpicview|gpicview
+viewnior|Viewnior|viewnior
 fotox|Fotox|fotox
 ristretto|Ristretto|ristretto
-eog|Eog|eog
 feh|Feh|feh
+mirage|Mirage|mirage
+eog|Eog|eog
+fspot|Fspot|fspot
 EOF
 }
 
 # Refresh the status text
 status_refresh () {
 . $USERCONFIGDIR/last
-echo 'Current:' $WP
+echo 'Current:' $(basename $WP)
 }
 export -f status_refresh
+
+get_slideshow () {
+cat $SLIDESHOWDIR/$CURRENT_SLIDESHOW
+}
+export -f get_slideshow
+
+remove_slideshowitem () {
+REMOVAL=$1
+sed -i ":$SLIDESHOW_TREE:d" $SLIDESHOW_TEMPFILE
+cat $SLIDESHOW_TEMPFILE > $SLIDESHOWDIR/$CURRENT_SLIDESHOW
+}
+export -f remove_slideshowitem
 
 gwp_slideshow () {
 export SS_DLG="
@@ -209,18 +271,6 @@ export PREFS_DLG="
     <item>White</item>
     <item>Pattern</item>
     <item>none</item>
-   </comboboxtext>
-  </hbox>
-  <hbox>
-   <text space-expand=\"false\">
-    <label>$(gettext 'Backend')</label>
-   </text>
-   <hseparator space-expand=\"true\"></hseparator>
-   <comboboxtext>
-    <variable>BACKEND</variable>
-    <default>$BACKEND</default>
-    $(ls -1 $LIBDIR/plugins/*.sh | sed 's%.sh%%g' | \
-      while read B ; do echo '<item>'$(basename $B)'</item>' ; done)
    </comboboxtext>
   </hbox>
   <hbox>
@@ -298,34 +348,67 @@ export -f gwp_about
 
 export WP_DLG="
 <window title=\"$PROGNAME-$VERSION\" icon_name=\"preferences-desktop-wallpaper\" resizable=\"false\" border-width=\"0\">
- <vbox>
-  <hbox>
-   <pixmap>
-    <input file>${CONFIGDIR}/theme/vspace.png</input>
-   </pixmap>
+ <vbox space-expand=\"true\" space-fill=\"true\">
+  <hbox space-expand=\"true\" space-fill=\"true\">
    <vbox>
     <menubar>
      <menu>
-      <menuitem icon=\"multimedia-player\">
-       <label>$(gettext 'Slideshow')</label>
-       <action>gwp_slideshow &</action>
-      </menuitem>
-      <menuitem icon=\"gtk-preferences\">
-       <label>$(gettext 'Preferences')</label>
-       <action>gwp_prefs &</action>
+      <menuitem checkbox=\"true\" use-underline=\"true\" active=\"false\">
+       <label>$(gettext 'Slideshow editor')</label>
+       <action>if true show:SLIDESHOW_EDITOR</action>
+       <action>if false hide:SLIDESHOW_EDITOR</action>
       </menuitem>
       <separator></separator>
-      <menuitem icon=\"gtk-close\">
-       <label>$(gettext 'Close')</label>
-       <action>EXIT:close</action>
-      </menuitem>
-      <label>$(gettext 'File')</label>
-     </menu>
-     <menu>
       $(viewer_programs)
       <separator></separator>
       $(editor_programs)
       <label>$(gettext 'Tools')</label>
+     </menu>
+     <menu>
+      <menu>
+       <menuitem radiobutton=\"true\" active=\"$STRETCH_ACTIVE\">
+        <label>Stretch</label>
+        <variable>STRETCH</variable>
+       </menuitem>
+       <menuitem radiobutton=\"true\" active=\"SCALE_ACTIVE\">
+        <label>Scale</label>
+        <variable>SCALE</variable>
+       </menuitem>
+       <menuitem radiobutton=\"true\" active=\"CENTER_ACTIVE\">
+        <label>Center</label>
+        <variable>CENTER</variable>
+       </menuitem>
+       <menuitem radiobutton=\"true\" active=\"TILE_ACTIVE\">
+        <label>Tile</label>
+        <variable>TILE</variable>
+       </menuitem>
+       <label>$(gettext 'Mode')</label>
+      </menu>
+      <menu>
+       <menuitem radiobutton=\"true\" active=\"$FEH_ACTIVE\">
+        <label>feh</label>
+        <variable>FEH</variable>
+       </menuitem>
+       <menuitem radiobutton=\"true\" active=\"$ROX_ACTIVE\">
+        <label>rox</label>
+        <variable>ROX</variable>
+       </menuitem>
+       <menuitem radiobutton=\"true\" active=\"$ESETROOT_ACTIVE\">
+        <label>esetroot</label>
+        <variable>ESETROOT</variable>
+       </menuitem>
+       <menuitem radiobutton=\"true\" active=\"$IMLIBSETROOT_ACTIVE\">
+        <label>imlibsetroot</label>
+        <variable>IMLIBSETROOT</variable>
+       </menuitem>
+       <label>$(gettext 'Backend')</label>
+      </menu>
+      <separator></separator>
+      <menuitem icon=\"gtk-preferences\">
+       <label>$(gettext 'Preferences')</label>
+       <action>gwp_prefs &</action>
+      </menuitem>
+      <label>Options</label>
      </menu>
      <menu>
       <menuitem stock=\"gtk-about\">
@@ -340,6 +423,9 @@ export WP_DLG="
      </menu>
     </menubar>
     <hbox>
+     <pixmap>
+      <input file>${CONFIGDIR}/theme/vspace.png</input>
+     </pixmap>
      <comboboxentry accept=\"directory\" file-monitor=\"true\">
       <variable>WP_DIR</variable>
       <default>$WP_DIR</default>
@@ -354,8 +440,15 @@ export WP_DLG="
       <action type=\"fileselect\">WP_DIR</action>
       <action>save:WP_DIR</action>
      </button>
+     <pixmap>
+      <input file>${CONFIGDIR}/theme/vspace.png</input>
+     </pixmap>
     </hbox>
-    <tree headers-visible=\"false\" selected-row=\"0\" selection-mode=\"1\" tooltip-text=\"$(gettext 'Doubleclick to set')\">
+    <tree headers-visible=\"false\" selected-row=\"0\"
+      selection-mode=\"1\" exported-column=\"1\"
+      column-type=\"string|string\" column-visible=\"true|false\"
+      tooltip-text=\"$(gettext 'Doubleclick to set')\">
+     <label>Images|Paths</label>
      <variable>WP</variable>
      <input>build_list</input>
      <action signal=\"changed\">refresh_preview</action>
@@ -390,16 +483,10 @@ export WP_DLG="
     <label>$(status_refresh)</label>
     <input>status_refresh</input>
    </text>
-   <hseparator space-expand=\"true\"></hseparator>
+   <hbox space-expand=\"true\" space-fill=\"true\">
+    <text><label>\" \"</label></text>
+   </hbox>
    <vseparator></vseparator>
-   <comboboxtext tooltip-text=\"$(gettext 'Set the way the image should be displayed')\">
-    <variable>MODE</variable>
-    <default>$MODE</default>
-    <item>Stretch</item>
-    <item>Scale</item>
-    <item>Center</item>
-    <item>Tile</item>
-   </comboboxtext>
    <button tooltip-text=\"$(gettext 'Set current selection')\">
     <label>$(gettext 'Apply')</label>
     <input file stock=\"gtk-apply\"></input>
@@ -418,11 +505,80 @@ export WP_DLG="
     <input file>${CONFIGDIR}/theme/vspace.png</input>
    </pixmap>
   </hbox>
+  <vbox visible=\"false\">
+   <hseparator space-expand=\"true\" space-fill=\"true\"></hseparator>
+   <hbox>
+    <button space-expand=\"false\" space-fill=\"false\" tooltip-text=\"$(gettext 'Add selection to current slideshow')\">
+     <input file stock=\"gtk-add\"></input>
+     <action function=\"insert\">WP,SLIDESHOW_TREE</action>
+     <action>save:SLIDESHOW_TREE</action>
+     <action>sed -i 's:|::g' $SLIDESHOW_TEMPFILE</action>
+     <action>refresh:SLIDESHOW_TREE</action>
+     <action>cat $SLIDESHOW_TEMPFILE > $SLIDESHOWDIR/\$CURRENT_SLIDESHOW</action>
+    </button>
+    <button space-expand=\"false\" space-fill=\"false\" tooltip-text=\"$(gettext 'Remove selection from current slideshow')\">
+     <input file icon=\"gtk-remove\"></input>
+     <action function=\"removeselected\">SLIDESHOW_TREE</action>
+     <action>save:SLIDESHOW_TREE</action>
+     <action>sed -i 's:|::g' $SLIDESHOW_TEMPFILE</action>
+     <action>refresh:SLIDESHOW_TREE</action>
+     <action>cat $SLIDESHOW_TEMPFILE > $SLIDESHOWDIR/\$CURRENT_SLIDESHOW</action>
+    </button>
+    <vseparator></vseparator>
+    <button space-expand=\"false\" space-fill=\"false\" tooltip-text=\"$(gettext 'Play slideshow')\">
+     <input file stock=\"gtk-media-play\"></input>
+     <action>echo</action>
+    </button>
+    <button space-expand=\"false\" space-fill=\"false\" tooltip-text=\"$(gettext 'Pause slideshow')\">
+     <input file stock=\"gtk-media-pause\"></input>
+     <action>echo</action>
+    </button>
+    <vseparator></vseparator>
+    <comboboxtext space-expand=\"false\" space-fill=\"false\">
+     <input>ls $SLIDESHOWDIR</input>
+     <variable>CURRENT_SLIDESHOW</variable>
+     <action>cat $SLIDESHOWDIR/\$CURRENT_SLIDESHOW > $SLIDESHOW_TEMPFILE</action>
+     <action type=\"refresh\">SLIDESHOW_TREE</action>
+    </comboboxtext>
+    <button space-expand=\"false\" space-fill=\"false\" tooltip-text=\"$(gettext 'Create a new slideshow')\">
+     <input file stock=\"gtk-new\"></input>
+     <action>show:NEW_SLIDESHOW</action>
+    </button>
+    <entry visible=\"false\">
+     <variable>NEW_SLIDESHOW</variable>
+     <action signal=\"activate\">touch $SLIDESHOWDIR/\$NEW_SLIDESHOW</action>
+     <action signal=\"activate\">refresh:CURRENT_SLIDESHOW</action>
+     <action signal=\"activate\">hide:NEW_SLIDESHOW</action>
+    </entry>
+    <vseparator space-expand=\"false\" space-fill=\"false\"></vseparator>
+    <hbox space-expand=\"true\" space-fill=\"true\">
+     <text>
+      <label>\" \"</label>
+     </text>
+    </hbox>
+   </hbox>
+   <tree selection-mode=\"1\"
+     tooltip-text=\"$(gettext 'Add items to the list that you wish to play in a slideshow')\"
+     exported-column=\"0\" column-type=\"string\" column-visible=\"true\">
+    <label>Images</label>
+    <height>250</height>
+    <input file>$SLIDESHOW_TEMPFILE</input>
+    <output file>$SLIDESHOW_TEMPFILE</output>
+    <variable>SLIDESHOW_TREE</variable>
+   </tree>
+   <variable>SLIDESHOW_EDITOR</variable>
+  </vbox>
  </vbox>
+ <action signal=\"hide\">exit:Close</action>
 </window>
 "
+# Actually run something here
+TMPFILE=$(mktemp)
 cat << EOF
 ${PROGNAME}-${VERSION}
 Copyright(©) 2013 Nathan Fisher <nfisher.sr@gmail.com>
 EOF
-gtkdialog --program WP_DLG > $USERCONFIGDIR/state
+gtkdialog --program WP_DLG > $TMPFILE
+. $TMPFILE
+[ ! "$EXIT" = "abort" ] && grep -v EXIT= $TMPFILE > $USERCONFIGDIR/state
+rm $SLIDESHOW_TEMPFILE $TMPFILE
