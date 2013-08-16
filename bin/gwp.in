@@ -368,22 +368,22 @@ cat >> $WTMPFILE << EOF
       <menu>
        <menuitem radiobutton="true" use-underline="true" accel-key="0x53"
          accel-mods="4" active="$STRETCH_ACTIVE">
-        <label>Stretch</label>
+        <label>$(gettext 'Stretch')</label>
         <variable>STRETCH</variable>
        </menuitem>
        <menuitem radiobutton="true" use-underline="true" accel-key="0x46"
          accel-mods="4" active="SCALE_ACTIVE">
-        <label>Scale</label>
+        <label>$(gettext 'Scale')</label>
         <variable>SCALE</variable>
        </menuitem>
        <menuitem radiobutton="true" use-underline="true" accel-key="0x4D"
          accel-mods="4" active="CENTER_ACTIVE">
-        <label>Center</label>
+        <label>$(gettext 'Center')</label>
         <variable>CENTER</variable>
        </menuitem>
        <menuitem radiobutton="true" use-underline="true" accel-key="0x54"
          accel-mods="4" active="TILE_ACTIVE">
-        <label>Tile</label>
+        <label>$(gettext 'Tile')</label>
         <variable>TILE</variable>
        </menuitem>
        <label>$(gettext 'Mode')</label>

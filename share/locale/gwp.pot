@@ -1,14 +1,14 @@
 # SOME DESCRIPTIVE TITLE.
-# Copyright (C) 2013 Nathan Fisher
-# This file is distributed under the same license as the gwallpaper package.
-# Nathan Fisher <nfisher.sr@gmail.com>, 2013.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: gwp VERSION\n"
+"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-08 14:29-0400\n"
+"POT-Creation-Date: 2013-08-16 04:28-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,86 +17,133 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../bin/gwp.in:102
-msgid "slideshow"
-msgstr ""
-
-#: ../../bin/gwp.in:109 ../../bin/gwp.in:141 ../../bin/gwp.in:201
-#: ../../bin/gwp.in:229 ../../bin/gwp.in:338
-msgid "Close"
-msgstr ""
-
-#: ../../bin/gwp.in:122
+#: gwp.in:237
 msgid "preferences"
 msgstr ""
 
-#: ../../bin/gwp.in:126
+#: gwp.in:241
 msgid "Preview height (pixels)"
 msgstr ""
 
-#: ../../bin/gwp.in:158
+#: gwp.in:257
+msgid "Preview background"
+msgstr ""
+
+#: gwp.in:271 gwp.in:333 gwp.in:362 gwp.in:509
+msgid "Close"
+msgstr ""
+
+#: gwp.in:290
 msgid "about"
 msgstr ""
 
-#: ../../bin/gwp.in:160
+#: gwp.in:292
 msgid "About|Credits"
 msgstr ""
 
-#: ../../bin/gwp.in:163
+#: gwp.in:295
 msgid "A fast and lightweight wallpaper setter"
 msgstr ""
 
-#: ../../bin/gwp.in:166
+#: gwp.in:298
 msgid ""
 "Gwp is designed to allow the average user to set their desktop wallpaper "
 "with a minimum of fuss. It is designed to be fast, easy, and desktop "
 "independent while providing a simple and streamlined interface."
 msgstr ""
 
-#: ../../bin/gwp.in:176
+#: gwp.in:308
 msgid "Author"
 msgstr ""
 
-#: ../../bin/gwp.in:182
+#: gwp.in:314
 msgid "License"
 msgstr ""
 
-#: ../../bin/gwp.in:220
-msgid "Slideshow"
+#: gwp.in:351
+msgid "Slideshow editor"
 msgstr ""
 
-#: ../../bin/gwp.in:224
-msgid "Preferences"
-msgstr ""
-
-#: ../../bin/gwp.in:232
-msgid "File"
-msgstr ""
-
-#: ../../bin/gwp.in:248
+#: gwp.in:365
 msgid "Tools"
 msgstr ""
 
-#: ../../bin/gwp.in:253
-msgid "About"
+#: gwp.in:371
+msgid "Stretch"
 msgstr ""
 
-#: ../../bin/gwp.in:257 ../../bin/gwp.in:259
-msgid "Help"
+#: gwp.in:376
+msgid "Scale"
 msgstr ""
 
-#: ../../bin/gwp.in:262
-msgid "Images|Options"
+#: gwp.in:381
+msgid "Center"
 msgstr ""
 
-#: ../../bin/gwp.in:294
-msgid "Background mode"
+#: gwp.in:386
+msgid "Tile"
 msgstr ""
 
-#: ../../bin/gwp.in:306
+#: gwp.in:389
+msgid "Mode"
+msgstr ""
+
+#: gwp.in:412
 msgid "Backend"
 msgstr ""
 
-#: ../../bin/gwp.in:329
+#: gwp.in:416
+msgid "Preferences"
+msgstr ""
+
+#: gwp.in:424
+msgid "About"
+msgstr ""
+
+#: gwp.in:428 gwp.in:430
+msgid "Help"
+msgstr ""
+
+#: gwp.in:446
+msgid "Add another directory to the list"
+msgstr ""
+
+#: gwp.in:458
+msgid "Doubleclick to set"
+msgstr ""
+
+#: gwp.in:498
+msgid "Set current selection"
+msgstr ""
+
+#: gwp.in:499
 msgid "Apply"
+msgstr ""
+
+#: gwp.in:508
+msgid "Exit program"
+msgstr ""
+
+#: gwp.in:520
+msgid "Add selection to current slideshow"
+msgstr ""
+
+#: gwp.in:529
+msgid "Remove selection from current slideshow"
+msgstr ""
+
+#: gwp.in:539
+msgid "Play slideshow"
+msgstr ""
+
+#: gwp.in:544
+msgid "Pause slideshow"
+msgstr ""
+
+#: gwp.in:556
+msgid "Create a new slideshow"
+msgstr ""
+
+#: gwp.in:574
+msgid "Add items to the list that you wish to play in a slideshow"
 msgstr ""
