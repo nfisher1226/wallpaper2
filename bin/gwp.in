@@ -51,8 +51,8 @@ fi
 SLIDESHOWDIR=$USERCONFIGDIR/slideshows
 [ ! -d "$SLIDESHOWDIR" ] && install -d "$SLIDESHOWDIR" \
   && touch "$SLIDESHOWDIR/default"
-SLIDESHOW_TEMPFILE=$(mktemp)
-cat $SLIDESHOWDIR/$CURRENT_SLIDESHOW >> $SLIDESHOW_TEMPFILE
+STMPFILE=$(mktemp)
+cat $SLIDESHOWDIR/$CURRENT_SLIDESHOW >> $STMPFILE
 
 # This sets the background for the preview area
 [[ -z "$PREVIEW_BACKGROUND" ]] && PREVIEW_BACKGROUND=Pattern
@@ -124,7 +124,15 @@ export \
   PREVIEW_BACKGROUND \
   SLIDESHOWDIR \
   CURRENT_SLIDESHOW \
-  SLIDESHOW_TEMPFILE
+  STMPFILE \
+  STRETCH \
+  SCALE \
+  CENTER \
+  TILE \
+  FEH \
+  ROX \
+  ESETROOT \
+  IMBLISETROOT
 
 # Read in functions
 . $LIBDIR/gwp.sh
@@ -153,13 +161,21 @@ refresh_preview () {
 }
 export -f refresh_preview
 
+# Refresh the preview image with something from the slideshow
+refresh_slideshow_preview () {
+[ -f "$STREE" ] && \
+   [ "$(egrep '.png|.jpg|.jpeg|.PNG|.JPG|.svg' <<< ${STREE})" ] && \
+   ln -sf "$STREE" $USERCONFIGDIR/current.png
+}
+export -f refresh_slideshow_preview
+
 # setup menu entries for various graphics editors
 # This function reads from the redirection below in the format
 # icon-name|Program-name|executable
 editor_programs () {
 while read PROG
   do CMD=$(cut -f 3 -d '|' <<< ${PROG})
-  if [ -x "$(which $CMD 2>/dev/null)" ]
+  if which $CMD &>/dev/null
     then ICON=$(cut -f 1 -d '|' <<< ${PROG})
     NAME=$(cut -f 2 -d '|' <<< ${PROG})
     echo '<menuitem icon='\"$ICON\"'><label>'$NAME'</label><action>'$CMD \"\$WP_DIR/\$WP\" \&'</action></menuitem>'
@@ -173,15 +189,15 @@ inkscape|Inkscape|inkscape
 inkscape|Inkscapelite|inkscapelite
 EOF
 }
+export EDITORS="$(editor_programs)"
 
 # setup menu entries for various graphics viewers
 # This function reads from the redirection below in the format
 # icon-name|Program-name|executable
 viewer_programs () {
 while read PROG
-  do
-  CMD=$(cut -f 3 -d '|' <<< ${PROG})
-  if [ -x "$(which $CMD 2>/dev/null)" ]
+  do CMD=$(cut -f 3 -d '|' <<< ${PROG})
+  if which $CMD &>/dev/null
     then ICON=$(cut -f 1 -d '|' <<< ${PROG})
     NAME=$(cut -f 2 -d '|' <<< ${PROG})
     echo '<menuitem icon='\"$ICON\"'><label>'$NAME'</label><action>'$CMD \"\$WP_DIR/\$WP\" \&'</action></menuitem>'
@@ -199,6 +215,7 @@ eog|Eog|eog
 fspot|Fspot|fspot
 EOF
 }
+export VIEWERS="$(viewer_programs)"
 
 # Refresh the status text
 status_refresh () {
@@ -208,46 +225,22 @@ echo 'Current:' $(basename $WP)
 export -f status_refresh
 
 get_slideshow () {
+[[ -z "$CURRENT_SLIDESHOW" ]] && CURRENT_SLIDESHOW=default
 cat $SLIDESHOWDIR/$CURRENT_SLIDESHOW
 }
 export -f get_slideshow
 
-remove_slideshowitem () {
-REMOVAL=$1
-sed -i ":$SLIDESHOW_TREE:d" $SLIDESHOW_TEMPFILE
-cat $SLIDESHOW_TEMPFILE > $SLIDESHOWDIR/$CURRENT_SLIDESHOW
-}
-export -f remove_slideshowitem
 
-gwp_slideshow () {
-export SS_DLG="
-<window title=\"$PROGNAME-$VERSION: $(gettext 'slideshow')\" icon=\"multimedia-player\">
- <vbox>
-  <text use-markup=\"true\">
-   <label>\"<b>To be written...</b>\"</label>
-  </text>
-  <hbox>
-   <button>
-    <label>$(gettext 'Close')</label>
-    <input file stock=\"gtk-close\"></input>
-   </button>
-  </hbox>
- </vbox>
-</window>
-"
-gtkdialog --program SS_DLG
-}
-export -f gwp_slideshow
-
-gwp_prefs () {
-export PREFS_DLG="
-<window title=\"$PROGNAME-$VERSION: $(gettext 'preferences')\" icon=\"gtk-preferences\" window-position=\"2\">
+# Create the prefs dialog
+export PTMPFILE=$(mktemp)
+cat >> $PTMPFILE << EOF
+<window title="$PROGNAME-$VERSION: $(gettext 'preferences')" icon="gtk-preferences" window-position="2">
  <vbox>
   <hbox>
-   <text space-expand=\"false\">
+   <text space-expand="false">
     <label>$(gettext 'Preview height (pixels)')</label>
    </text>
-   <hseparator space-expand=\"true\"></hseparator>
+   <hseparator space-expand="true"></hseparator>
    <comboboxtext>
     <variable>HEIGHT</variable>
     <default>$HEIGHT</default>
@@ -260,10 +253,10 @@ export PREFS_DLG="
    </comboboxtext>
   </hbox>
   <hbox>
-   <text space-expand=\"false\">
+   <text space-expand="false">
     <label>$(gettext 'Preview background')</label>
    </text>
-   <hseparator space-expand=\"true\"></hseparator>
+   <hseparator space-expand="true"></hseparator>
    <comboboxtext>
     <variable>PREVIEW_BACKGROUND</variable>
     <default>$PREVIEW_BACKGROUND</default>
@@ -276,31 +269,33 @@ export PREFS_DLG="
   <hbox>
    <button>
     <label>$(gettext 'Close')</label>
-    <input file stock=\"gtk-close\"></input>
+    <input file stock="gtk-close"></input>
    </button>
   </hbox>
  </vbox>
 </window>
-"
+EOF
+gwp_prefs () {
 TMPFILE=$(mktemp)
-gtkdialog --program PREFS_DLG > $TMPFILE
+gtkdialog --file $PTMPFILE > $TMPFILE
 . $TMPFILE
 [ ! "$EXIT" = "abort" ] && grep -v 'EXIT=' $TMPFILE > $USERCONFIGDIR/conf
 rm $TMPFILE
 }
 export -f gwp_prefs
 
-gwp_about () {
-export ABOUT_DLG="
-<window title=\"${PROGNAME}-${VERSION}: $(gettext 'about')\" icon=\"gtk-about\">
+# Create a simple "About" dialog
+ATMPFILE=$(mktemp)
+cat >> $ATMPFILE << EOF
+<window title="${PROGNAME}-${VERSION}: $(gettext 'about')" icon="gtk-about">
  <vbox>
-  <notebook labels=\"$(gettext 'About|Credits')\">
+  <notebook labels="$(gettext 'About|Credits')">
    <vbox>
-    <text use-markup=\"true\">
-     <label>\"<b>$(gettext 'A fast and lightweight wallpaper setter')</b>\"</label>
+    <text use-markup="true">
+     <label>"<b>$(gettext 'A fast and lightweight wallpaper setter')</b>"</label>
     </text>
     <text>
-     <label>\"$(gettext 'Gwp is designed to allow the average user to set their desktop wallpaper with a minimum of fuss. It is designed to be fast, easy, and desktop independent while providing a simple and streamlined interface.')\"</label>
+     <label>"$(gettext 'Gwp is designed to allow the average user to set their desktop wallpaper with a minimum of fuss. It is designed to be fast, easy, and desktop independent while providing a simple and streamlined interface.')"</label>
     </text>
     <button>
      <label>https://bitbucket.org/nfisher1226/wallpaper2</label>
@@ -309,24 +304,24 @@ export ABOUT_DLG="
    </vbox>
    <vbox>
     <hbox>
-     <text space-expand=\"false\">
+     <text space-expand="false">
       <label>$(gettext 'Author'): Nathan Fisher</label>
      </text>
-     <hseparator space-expand=\"true\"></hseparator>
+     <hseparator space-expand="true"></hseparator>
     </hbox>
     <hbox>
-     <text space-expand=\"false\">
+     <text space-expand="false">
       <label>$(gettext 'License'): GPLv2</label>
      </text>
-     <hseparator space-expand=\"true\"></hseparator>
+     <hseparator space-expand="true"></hseparator>
     </hbox>
     <hbox>
-     <text space-expand=\"false\">
+     <text space-expand="false">
       <label>Copyright(©) 2013 Nathan Fisher</label>
      </text>
-     <hseparator space-expand=\"true\"></hseparator>
+     <hseparator space-expand="true"></hseparator>
     </hbox>
-    <text><label>\" \"</label></text>
+    <text><label>" "</label></text>
     <button>
      <label>http://www.gnu.org/licenses/gpl-2.0.txt</label>
      <action>xdg-open http://www.gnu.org/licenses/gpl-2.0.txt &</action>
@@ -336,86 +331,99 @@ export ABOUT_DLG="
   <hbox>
    <button>
     <label>$(gettext 'Close')</label>
-    <input file stock=\"gtk-close\"></input>
+    <input file stock="gtk-close"></input>
    </button>
   </hbox>
  </vbox>
 </window>
-"
-gtkdialog --program ABOUT_DLG
-}
-export -f gwp_about
+EOF
 
-export WP_DLG="
-<window title=\"$PROGNAME-$VERSION\" icon_name=\"preferences-desktop-wallpaper\" resizable=\"false\" border-width=\"0\">
- <vbox space-expand=\"true\" space-fill=\"true\">
-  <hbox space-expand=\"true\" space-fill=\"true\">
+WTMPFILE=$(mktemp)
+cat >> $WTMPFILE << EOF
+<window title="$PROGNAME-$VERSION" icon_name="preferences-desktop-wallpaper" resizable="false" border-width="0">
+ <vbox space-expand="true" space-fill="true">
+  <hbox space-expand="true" space-fill="true">
    <vbox>
     <menubar>
      <menu>
-      <menuitem checkbox=\"true\" use-underline=\"true\" active=\"false\">
+      <menuitem checkbox="true" use-underline="true" active="false"
+        accel-key="0x45" accel-mods="4">
        <label>$(gettext 'Slideshow editor')</label>
        <action>if true show:SLIDESHOW_EDITOR</action>
        <action>if false hide:SLIDESHOW_EDITOR</action>
       </menuitem>
       <separator></separator>
-      $(viewer_programs)
+      $VIEWERS
       <separator></separator>
-      $(editor_programs)
+      $EDITORS
+      <separator></separator>
+       <menuitem icon="gtk-close" use-underline="true" accel-key="0x51"
+         accel-mods="4">
+        <label>$(gettext 'Close')</label>
+        <action>exit:Close</action>
+       </menuitem>
       <label>$(gettext 'Tools')</label>
      </menu>
      <menu>
       <menu>
-       <menuitem radiobutton=\"true\" active=\"$STRETCH_ACTIVE\">
+       <menuitem radiobutton="true" use-underline="true" accel-key="0x53"
+         accel-mods="4" active="$STRETCH_ACTIVE">
         <label>Stretch</label>
         <variable>STRETCH</variable>
        </menuitem>
-       <menuitem radiobutton=\"true\" active=\"SCALE_ACTIVE\">
+       <menuitem radiobutton="true" use-underline="true" accel-key="0x46"
+         accel-mods="4" active="SCALE_ACTIVE">
         <label>Scale</label>
         <variable>SCALE</variable>
        </menuitem>
-       <menuitem radiobutton=\"true\" active=\"CENTER_ACTIVE\">
+       <menuitem radiobutton="true" use-underline="true" accel-key="0x4D"
+         accel-mods="4" active="CENTER_ACTIVE">
         <label>Center</label>
         <variable>CENTER</variable>
        </menuitem>
-       <menuitem radiobutton=\"true\" active=\"TILE_ACTIVE\">
+       <menuitem radiobutton="true" use-underline="true" accel-key="0x54"
+         accel-mods="4" active="TILE_ACTIVE">
         <label>Tile</label>
         <variable>TILE</variable>
        </menuitem>
        <label>$(gettext 'Mode')</label>
       </menu>
       <menu>
-       <menuitem radiobutton=\"true\" active=\"$FEH_ACTIVE\">
+       <menuitem radiobutton="true" use-underline="true" accel-key="0x46"
+         accel-mods="1" active="$FEH_ACTIVE">
         <label>feh</label>
         <variable>FEH</variable>
        </menuitem>
-       <menuitem radiobutton=\"true\" active=\"$ROX_ACTIVE\">
+       <menuitem radiobutton="true" use-underline="true" accel-key="0x52"
+         accel-mods="1" active="$ROX_ACTIVE">
         <label>rox</label>
         <variable>ROX</variable>
        </menuitem>
-       <menuitem radiobutton=\"true\" active=\"$ESETROOT_ACTIVE\">
+       <menuitem radiobutton="true" use-underline="true" accel-key="0x45"
+         accel-mods="1" active="$ESETROOT_ACTIVE">
         <label>esetroot</label>
         <variable>ESETROOT</variable>
        </menuitem>
-       <menuitem radiobutton=\"true\" active=\"$IMLIBSETROOT_ACTIVE\">
+       <menuitem radiobutton="true" use-underline="true" accel-key="0x49"
+         accel-mods="1" active="$IMLIBSETROOT_ACTIVE">
         <label>imlibsetroot</label>
         <variable>IMLIBSETROOT</variable>
        </menuitem>
        <label>$(gettext 'Backend')</label>
       </menu>
       <separator></separator>
-      <menuitem icon=\"gtk-preferences\">
+      <menuitem icon="gtk-preferences">
        <label>$(gettext 'Preferences')</label>
        <action>gwp_prefs &</action>
       </menuitem>
       <label>Options</label>
      </menu>
      <menu>
-      <menuitem stock=\"gtk-about\">
-       <action>gwp_about &</action>
+      <menuitem stock="gtk-about">
+       <action>gtkdialog --file $ATMPFILE &</action>
        <label>$(gettext 'About')</label>
       </menuitem>
-      <menuitem stock=\"gtk-help\">
+      <menuitem stock="gtk-help">
        <action>xdg-open https://bitbucket.org/nfisher1226/wallpaper2 &</action>
        <label>$(gettext 'Help')</label>
       </menuitem>
@@ -426,44 +434,44 @@ export WP_DLG="
      <pixmap>
       <input file>${CONFIGDIR}/theme/vspace.png</input>
      </pixmap>
-     <comboboxentry accept=\"directory\" file-monitor=\"true\">
+     <comboboxentry accept="directory" file-monitor="true">
       <variable>WP_DIR</variable>
       <default>$WP_DIR</default>
       <input file>$USERCONFIGDIR/wp-dirs</input>
       <output file>$USERCONFIGDIR/wp-dirs</output>
-      <action signal=\"activate\">save:WP_DIR</action>
-      <action signal=\"changed\">clear:WP</action>
-      <action signal=\"changed\">refresh:WP</action>
+      <action signal="activate">save:WP_DIR</action>
+      <action signal="changed">clear:WP</action>
+      <action signal="changed">refresh:WP</action>
      </comboboxentry>
-     <button tooltip-text=\"$(gettext 'Add another directory to the list')\">
-      <input file stock=\"gtk-directory\"></input>
-      <action type=\"fileselect\">WP_DIR</action>
+     <button tooltip-text="$(gettext 'Add another directory to the list')">
+      <input file stock="gtk-directory"></input>
+      <action type="fileselect">WP_DIR</action>
       <action>save:WP_DIR</action>
      </button>
      <pixmap>
       <input file>${CONFIGDIR}/theme/vspace.png</input>
      </pixmap>
     </hbox>
-    <tree headers-visible=\"false\" selected-row=\"0\"
-      selection-mode=\"1\" exported-column=\"1\"
-      column-type=\"string|string\" column-visible=\"true|false\"
-      tooltip-text=\"$(gettext 'Doubleclick to set')\">
+    <tree headers-visible="false" selected-row="0"
+      selection-mode="1" exported-column="1"
+      column-type="string|string" column-visible="true|false"
+      tooltip-text="$(gettext 'Doubleclick to set')">
      <label>Images|Paths</label>
      <variable>WP</variable>
      <input>build_list</input>
-     <action signal=\"changed\">refresh_preview</action>
-     <action signal=\"changed\" type=\"refresh\">CURRENTIMG</action>
+     <action signal="changed">refresh_preview</action>
+     <action signal="changed" type="refresh">CURRENTIMG</action>
      <action>set_wallpaper</action>
      <action>echo WP_DIR=\$WP_DIR > $USERCONFIGDIR/last</action>
      <action>echo WP=\$WP >> $USERCONFIGDIR/last</action>
      <action>echo MODE=\$MODE >> $USERCONFIGDIR/last</action>
      <action>echo BACKEND=\$BACKEND >> $USERCONFIGDIR/last</action>
-     <action type=\"refresh\">STATUS</action>
+     <action type="refresh">STATUS</action>
     </tree>
    </vbox>
-   <vbox width-request=\"$WIDTH\" space-expand=\"true\" space-fill=\"true\">
-    <eventbox name=\"$eventbox_name\">
-     <pixmap file-monitor=\"true\" export=\"false\">
+   <vbox width-request="$WIDTH" space-expand="true" space-fill="true">
+    <eventbox name="$eventbox_name">
+     <pixmap file-monitor="true" export="false">
       <variable>CURRENTIMG</variable>
       <height>$HEIGHT</height>
       <input file>$USERCONFIGDIR/current.png</input>
@@ -478,107 +486,114 @@ export WP_DLG="
    <pixmap>
     <input file>${CONFIGDIR}/theme/vspace.png</input>
    </pixmap>
-   <text space-expand=\"false\">
+   <text space-expand="false">
     <variable>STATUS</variable>
     <label>$(status_refresh)</label>
     <input>status_refresh</input>
    </text>
-   <hbox space-expand=\"true\" space-fill=\"true\">
-    <text><label>\" \"</label></text>
+   <hbox space-expand="true" space-fill="true">
+    <text><label>" "</label></text>
    </hbox>
    <vseparator></vseparator>
-   <button tooltip-text=\"$(gettext 'Set current selection')\">
+   <button tooltip-text="$(gettext 'Set current selection')">
     <label>$(gettext 'Apply')</label>
-    <input file stock=\"gtk-apply\"></input>
+    <input file stock="gtk-apply"></input>
     <action>set_wallpaper</action>
     <action>echo WP_DIR=\$WP_DIR > $USERCONFIGDIR/last</action>
     <action>echo WP=\$WP >> $USERCONFIGDIR/last</action>
     <action>echo MODE=\$MODE >> $USERCONFIGDIR/last</action>
     <action>echo BACKEND=\$BACKEND >> $USERCONFIGDIR/last</action>
-    <action type=\"refresh\">STATUS</action>
+    <action type="refresh">STATUS</action>
    </button>
-   <button tooltip-text=\"$(gettext 'Exit program')\">
+   <button tooltip-text="$(gettext 'Exit program')">
     <label>$(gettext 'Close')</label>
-    <input file stock=\"gtk-close\"></input>
+    <input file stock="gtk-close"></input>
    </button>
    <pixmap>
     <input file>${CONFIGDIR}/theme/vspace.png</input>
    </pixmap>
   </hbox>
-  <vbox visible=\"false\">
-   <hseparator space-expand=\"true\" space-fill=\"true\"></hseparator>
+  <vbox visible="false">
+   <hseparator space-expand="true" space-fill="true"></hseparator>
    <hbox>
-    <button space-expand=\"false\" space-fill=\"false\" tooltip-text=\"$(gettext 'Add selection to current slideshow')\">
-     <input file stock=\"gtk-add\"></input>
-     <action function=\"insert\">WP,SLIDESHOW_TREE</action>
-     <action>save:SLIDESHOW_TREE</action>
-     <action>sed -i 's:|::g' $SLIDESHOW_TEMPFILE</action>
-     <action>refresh:SLIDESHOW_TREE</action>
-     <action>cat $SLIDESHOW_TEMPFILE > $SLIDESHOWDIR/\$CURRENT_SLIDESHOW</action>
+    <button space-expand="false" space-fill="false"
+      tooltip-text="$(gettext 'Add selection to current slideshow')">
+     <input file stock="gtk-add"></input>
+     <action function="insert">WP,STREE</action>
+     <action>save:STREE</action>
+     <action>sed -i 's:|::g' $STMPFILE</action>
+     <action>refresh:STREE</action>
+     <action>cat $STMPFILE > $SLIDESHOWDIR/\$CURRENT_SLIDESHOW</action>
     </button>
-    <button space-expand=\"false\" space-fill=\"false\" tooltip-text=\"$(gettext 'Remove selection from current slideshow')\">
-     <input file icon=\"gtk-remove\"></input>
-     <action function=\"removeselected\">SLIDESHOW_TREE</action>
-     <action>save:SLIDESHOW_TREE</action>
-     <action>sed -i 's:|::g' $SLIDESHOW_TEMPFILE</action>
-     <action>refresh:SLIDESHOW_TREE</action>
-     <action>cat $SLIDESHOW_TEMPFILE > $SLIDESHOWDIR/\$CURRENT_SLIDESHOW</action>
-    </button>
-    <vseparator></vseparator>
-    <button space-expand=\"false\" space-fill=\"false\" tooltip-text=\"$(gettext 'Play slideshow')\">
-     <input file stock=\"gtk-media-play\"></input>
-     <action>echo</action>
-    </button>
-    <button space-expand=\"false\" space-fill=\"false\" tooltip-text=\"$(gettext 'Pause slideshow')\">
-     <input file stock=\"gtk-media-pause\"></input>
-     <action>echo</action>
+    <button space-expand="false" space-fill="false"
+      tooltip-text="$(gettext 'Remove selection from current slideshow')">
+     <input file icon="gtk-remove"></input>
+     <action function="removeselected">STREE</action>
+     <action>save:STREE</action>
+     <action>sed -i 's:|::g' $STMPFILE</action>
+     <action>refresh:STREE</action>
+     <action>cat $STMPFILE > $SLIDESHOWDIR/\$CURRENT_SLIDESHOW</action>
     </button>
     <vseparator></vseparator>
-    <comboboxtext space-expand=\"false\" space-fill=\"false\">
+    <button space-expand="false" space-fill="false"
+      tooltip-text="$(gettext 'Play slideshow')">
+     <input file stock="gtk-media-play"></input>
+     <action>echo</action>
+    </button>
+    <button space-expand="false" space-fill="false"
+      tooltip-text="$(gettext 'Pause slideshow')">
+     <input file stock="gtk-media-pause"></input>
+     <action>echo</action>
+    </button>
+    <vseparator></vseparator>
+    <comboboxtext space-expand="false" space-fill="false">
      <input>ls $SLIDESHOWDIR</input>
      <variable>CURRENT_SLIDESHOW</variable>
-     <action>cat $SLIDESHOWDIR/\$CURRENT_SLIDESHOW > $SLIDESHOW_TEMPFILE</action>
-     <action type=\"refresh\">SLIDESHOW_TREE</action>
+     <action>cat $SLIDESHOWDIR/\$CURRENT_SLIDESHOW > $STMPFILE</action>
+     <action type="refresh">STREE</action>
     </comboboxtext>
-    <button space-expand=\"false\" space-fill=\"false\" tooltip-text=\"$(gettext 'Create a new slideshow')\">
-     <input file stock=\"gtk-new\"></input>
+    <button space-expand="false" space-fill="false"
+      tooltip-text="$(gettext 'Create a new slideshow')">
+     <input file stock="gtk-new"></input>
      <action>show:NEW_SLIDESHOW</action>
     </button>
-    <entry visible=\"false\">
+    <entry visible="false">
      <variable>NEW_SLIDESHOW</variable>
-     <action signal=\"activate\">touch $SLIDESHOWDIR/\$NEW_SLIDESHOW</action>
-     <action signal=\"activate\">refresh:CURRENT_SLIDESHOW</action>
-     <action signal=\"activate\">hide:NEW_SLIDESHOW</action>
+     <action signal="activate">touch $SLIDESHOWDIR/\$NEW_SLIDESHOW</action>
+     <action signal="activate">refresh:CURRENT_SLIDESHOW</action>
+     <action signal="activate">hide:NEW_SLIDESHOW</action>
     </entry>
-    <vseparator space-expand=\"false\" space-fill=\"false\"></vseparator>
-    <hbox space-expand=\"true\" space-fill=\"true\">
+    <vseparator space-expand="false" space-fill="false"></vseparator>
+    <hbox space-expand="true" space-fill="true">
      <text>
-      <label>\" \"</label>
+      <label>" "</label>
      </text>
     </hbox>
    </hbox>
-   <tree selection-mode=\"1\"
-     tooltip-text=\"$(gettext 'Add items to the list that you wish to play in a slideshow')\"
-     exported-column=\"0\" column-type=\"string\" column-visible=\"true\">
+   <tree selection-mode="1"
+     tooltip-text="$(gettext 'Add items to the list that you wish to play in a slideshow')"
+     exported-column="0" column-type="string" column-visible="true">
     <label>Images</label>
     <height>250</height>
-    <input file>$SLIDESHOW_TEMPFILE</input>
-    <output file>$SLIDESHOW_TEMPFILE</output>
-    <variable>SLIDESHOW_TREE</variable>
+    <input file>$STMPFILE</input>
+    <output file>$STMPFILE</output>
+    <variable>STREE</variable>
+    <action signal="changed">refresh_slideshow_preview</action>
+    <action signal="changed" type="refresh">CURRENTIMG</action>
    </tree>
    <variable>SLIDESHOW_EDITOR</variable>
   </vbox>
  </vbox>
- <action signal=\"hide\">exit:Close</action>
+ <action signal="hide">exit:Close</action>
 </window>
-"
+EOF
 # Actually run something here
-TMPFILE=$(mktemp)
+ETMPFILE=$(mktemp)
 cat << EOF
 ${PROGNAME}-${VERSION}
 Copyright(©) 2013 Nathan Fisher <nfisher.sr@gmail.com>
 EOF
-gtkdialog --program WP_DLG > $TMPFILE
-. $TMPFILE
-[ ! "$EXIT" = "abort" ] && grep -v EXIT= $TMPFILE > $USERCONFIGDIR/state
-rm $SLIDESHOW_TEMPFILE $TMPFILE
+gtkdialog --file $WTMPFILE | tee $ETMPFILE
+. $ETMPFILE
+[ ! "$EXIT" = "abort" ] && grep -v EXIT= $ETMPFILE > $USERCONFIGDIR/state
+rm $STMPFILE $ETMPFILE $ATMPFILE $PTMPFILE $WTMPFILE
