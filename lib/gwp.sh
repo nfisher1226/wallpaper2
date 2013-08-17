@@ -1,13 +1,18 @@
 set_wallpaper () {
-[ "$STRETCH" = "true" ] && MODE=Stretch
-[ "$SCALE" = "true" ] && MODE=Scale
-[ "$CENTER" = "true" ] && MODE=Center
-[ "$TILE" = "true" ] && MODE=Tile
-[ "$FEH" = "true" ] && BACKEND=feh
-[ "$ROX" = "true" ] && BACKEND=rox
-[ "$IMLIBSETROOT" = "true" ] && BACKEND=imlibsetroot
-[ "ESETROOT" = "true" ] && BACKEND=esetroot
-[[ -z "$BACKEND" ]] && BACKEND=feh
+case true in
+  $STRETCH) MODE=Stretch ;;
+  $SCALE) MODE=Scale ;;
+  $CENTER) MODE=Center ;;
+  $TILE) MODE=Tile ;;
+esac
+case true in
+  $FEH) BACKEND=feh ;;
+  $ROX) BACKEND=rox ;;
+  $IMLIBSETROOT) BACKEND=imlibsetroot ;;
+  $ESETROOT) BACKEND=esetroot ;;
+esac
+: ${MODE:=Stretch}
+: ${BACKEND:=feh}
 . $LIBDIR/plugins/${BACKEND}.sh
 set_wallpaper "$MODE" "$WP"
 }

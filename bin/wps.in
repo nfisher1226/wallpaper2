@@ -1,0 +1,35 @@
+#!/bin/sh
+[ $1 ] && exit 1
+SELF="$0"
+SS="$1"
+PREFIX="$(dirname $(dirname $SELF))"
+PROGNAME=gwp
+TEXTDOMAIN=$PROGNAME
+CONFIGDIR=@@@SYSCONFDIR@@@/$PROGNAME
+USERCONFIGDIR=$HOME/.config/$PROGNAME
+LIBDIR=$PREFIX/lib/$PROGNAME
+. $CONFIGDIR/conf
+[ -f "$USERCONFIGDIR/conf" ] && . "$USERCONFIGDIR/conf"
+
+# Read in functions
+. $LIBDIR/gwp.sh
+
+# Make sure X is running
+if pidof X &>/dev/null
+  then XPID=$(pidof X)
+  elif pidof Xorg &>/dev/null
+  then XPID=$(pidof Xorg)
+  else exit
+fi
+
+while :
+do while read i
+   do [ "$XPID" = "$(pidof X)" ] || \
+      [ "$XPID" = "$(pidof Xorg)" ] || exit 2 # exit 2 if X isn't running
+      WP="$i" MODE=Scale set_wallpaper
+      SLEEP=$(cat $USERCONFIGDIR/sleep)
+      : ${SLEEP:=60}
+      sleep $SLEEP
+   done <$USERCONFIGDIR/slideshows/$SS
+done
+rm $USERCONFIGDIR/sleep

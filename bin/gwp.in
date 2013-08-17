@@ -33,10 +33,9 @@ export GTK2_RC_FILES=${CONFIGDIR}/theme/gtkrc:~/.gtkrc-2.0
 [ -f "$USERCONFIGDIR/conf" ] && . "$USERCONFIGDIR/conf"
 [ ! -d "$USERCONFIGDIR" ] && install -d "$USERCONFIGDIR"
 [ -f "$USERCONFIGDIR/state" ] && . "$USERCONFIGDIR/state"
-[[ -z "$MODE" ]] && MODE=Stretch
-[[ -z "$BACKEND" ]] && BACKEND=$DEFAULT_BACKEND
-[[ -z "$WP_DIR" ]] && \
-  WP_DIR="$(dirname $(find $DEFAULT_WP_DIR -type f | sort | head -n 1))"
+: ${MODE:=Stretch}
+: ${BACKEND:=$DEFAULT_BACKEND}
+: ${WP_DIR:="$(dirname $(find $DEFAULT_WP_DIR -type f | sort | head -n 1))"}
 if [ ! -f "$USERCONFIGDIR/wp-dirs" ] ; then
   dirname $(find $DEFAULT_WP_DIR -type f | sort | head -n 1) > \
     "$USERCONFIGDIR/wp-dirs"
@@ -49,65 +48,50 @@ fi
 
 # Setup the slideshow
 SLIDESHOWDIR=$USERCONFIGDIR/slideshows
-[ ! -d "$SLIDESHOWDIR" ] && install -d "$SLIDESHOWDIR" \
-  && touch "$SLIDESHOWDIR/default"
+[ ! -d "$SLIDESHOWDIR" ] && \
+  { install -d "$SLIDESHOWDIR" ; touch "$SLIDESHOWDIR/default"; }
 STMPFILE=$(mktemp)
 cat $SLIDESHOWDIR/$CURRENT_SLIDESHOW >> $STMPFILE
 
 # This sets the background for the preview area
 [[ -z "$PREVIEW_BACKGROUND" ]] && PREVIEW_BACKGROUND=Pattern
 case $PREVIEW_BACKGROUND in
-Black)
-  eventbox_name=BgBlack
-;;
-White)
-  eventbox_name=BgWhite
-;;
-Pattern)
-  eventbox_name=BgPixmap
-;;
-*)
-  eventbox_name=BgNormal
-;;
+  Black) eventbox_name=BgBlack ;;
+  White) eventbox_name=BgWhite ;;
+  Pattern) eventbox_name=BgPixmap ;;
+  *) eventbox_name=BgNormal ;;
 esac
 
-# Get the correct mode
+# Get the correct mode and backend
 # Harder to do now with radiobuttons than with combobox, but worth it?
-if [ "$STRETCH" = "true" ]
-  then STRETCH_ACTIVE=true ; MODE=Stretch
-  else STRETCH_ACTIVE=false
-fi
-if [ "$SCALE" = "true" ]
-  then SCALE_ACTIVE=true ; MODE=Scale
-  else SCALE_ACTIVE=false
-fi
-if [ "$STRETCH" = "true" ]
-  then CENTER_ACTIVE=true ; MODE=Center
-  else CENTER_ACTIVE=false
-fi
-if [ "$TILE" = "true" ]
-  then TILE_ACTIVE=true ; MODE=Tile
-  else TILE_ACTIVE=false
-fi
+# First set all to false
+STRETCH_ACTIVE=false
+SCALE_ACTIVE=false
+CENTER_ACTIVE=false
+TILE_ACTIVE=false
+FEH_ACTIVE=false
+ROX_ACTIVE=false
+IMLIBSETROOT_ACTIVE=false
+ESETROOT_ACTIVE=false
+# Then reverse match what is "true" for modes
+case true in
+  $STRETCH) STRETCH_ACTIVE=true ; MODE=Stretch ;;
+  $SCALE) SCALE_ACTIVE=true ; MODE=Scale ;;
+  $CENTER) CENTER_ACTIVE=true ; MODE=Center ;;
+  $TILE) TILE_ACTIVE=true ; MODE=Tile ;;
+esac
+# And again for backends
+case true in
+  $FEH) FEH_ACTIVE=true ; BACKEND=feh ;;
+  $ROX) ROX_ACTIVE=true ; BACKEND=rox ;;
+  $IMLIBSETROOT) IMLIBSETROOT_ACTIVE=true ; BACKEND=imlibsetroot ;;
+  $ESETROOT) ESETROOT_ACTIVE=true ; BACKEND=esetroot ;;
+esac
+# If no matches set some sane defaults
+: ${MODE:=Stretch}
+: ${BACKEND:=FEH}
 
-# Get the correct backend (as above)
-if [ "$FEH" = "true" ]
-  then FEH_ACTIVE=true ; BACKEND=feh
-  else FEH_ACTIVE=false
-fi
-if [ "$ROX" = "true" ]
-  then ROX_ACTIVE=true ; BACKEND=rox
-  else ROX_ACTIVE=false
-fi
-if [ "$IMLIBSETROOT" = "true" ]
-  then IMLIBSETROOT_ACTIVE=true ; BACKEND=imlibsetroot
-  else IMLIBSETROOT_ACTIVE=false
-fi
-if [ "$ESETROOT" = "true" ]
-  then ESETROOT_ACTIVE=true ; BACKEND=esetroot
-  else ESETROOT_ACTIVE=false
-fi
-
+# Export all our variables for use with gtkdialog
 export \
   PREFIX \
   PROGNAME \
@@ -138,18 +122,20 @@ export \
 . $LIBDIR/gwp.sh
 
 # get the width for the preview area
-WIDTH=$(echo $[$HEIGHT * 16 / 10] | cut -f 1 -d '.')
+WIDTH=$(cut -f 1 -d '.' <<< $[$HEIGHT * 16 / 10])
 
 # Build our list of image files
 build_list () {
-[ -d "$WP_DIR" ] && find "$WP_DIR" \
+[ -d "$WP_DIR" ] && \
+  find "$WP_DIR" \
   -maxdepth 1 \
   -type f \
   \( -iname "*.png" \
   -o -iname "*.jp*g" \
   -o -iname "*.svg" \
   -o -iname "*.tif*" \) \
-  | while read f ; do echo "$(basename $f)|$f" ; done
+  -exec echo -n '{}|' \; \
+  -exec basename '{}' \;
 }
 export -f build_list
 
@@ -173,20 +159,17 @@ export -f refresh_slideshow_preview
 # This function reads from the redirection below in the format
 # icon-name|Program-name|executable
 editor_programs () {
-while read PROG
-  do CMD=$(cut -f 3 -d '|' <<< ${PROG})
-  if which $CMD &>/dev/null
-    then ICON=$(cut -f 1 -d '|' <<< ${PROG})
-    NAME=$(cut -f 2 -d '|' <<< ${PROG})
-    echo '<menuitem icon='\"$ICON\"'><label>'$NAME'</label><action>'$CMD \"\$WP_DIR/\$WP\" \&'</action></menuitem>'
+while read ICON NAME CMD
+  do if which $CMD &>/dev/null
+    then echo '<menuitem icon='\"$ICON\"'><label>'$NAME'</label><action>'$CMD \"\$WP\" \&'</action></menuitem>'
   fi
 done << EOF
-gimp|Gimp|gimp
-cinepaint|Cinepaint|cinepaint
-krita|Krita|krita
-mtpaint|mtPaint|mtpaint
-inkscape|Inkscape|inkscape
-inkscape|Inkscapelite|inkscapelite
+gimp Gimp gimp
+cinepaint Cinepaint cinepaint
+krita Krita krita
+mtpaint mtPaint mtpaint
+inkscape Inkscape inkscape
+inkscape Inkscapelite inkscapelite
 EOF
 }
 export EDITORS="$(editor_programs)"
@@ -195,24 +178,21 @@ export EDITORS="$(editor_programs)"
 # This function reads from the redirection below in the format
 # icon-name|Program-name|executable
 viewer_programs () {
-while read PROG
-  do CMD=$(cut -f 3 -d '|' <<< ${PROG})
-  if which $CMD &>/dev/null
-    then ICON=$(cut -f 1 -d '|' <<< ${PROG})
-    NAME=$(cut -f 2 -d '|' <<< ${PROG})
-    echo '<menuitem icon='\"$ICON\"'><label>'$NAME'</label><action>'$CMD \"\$WP_DIR/\$WP\" \&'</action></menuitem>'
+while read ICON NAME CMD
+  do if which $CMD &>/dev/null
+    then echo '<menuitem icon='\"$ICON\"'><label>'$NAME'</label><action>'$CMD \"\$WP\" \&'</action></menuitem>'
   fi
 done << EOF
-xnview|XnView|xnview
-gqview|Gqview|gqview
-gpicview|Gpicview|gpicview
-viewnior|Viewnior|viewnior
-fotox|Fotox|fotox
-ristretto|Ristretto|ristretto
-feh|Feh|feh
-mirage|Mirage|mirage
-eog|Eog|eog
-fspot|Fspot|fspot
+xnview XnView xnview
+gqview Gqview gqview
+gpicview Gpicview gpicview
+viewnior Viewnior viewnior
+fotox Fotox fotox
+ristretto Ristretto ristretto
+feh Feh feh
+mirage Mirage mirage
+eog Eog eog
+fspot Fspot fspot
 EOF
 }
 export VIEWERS="$(viewer_programs)"
@@ -225,7 +205,7 @@ echo 'Current:' $(basename $WP)
 export -f status_refresh
 
 get_slideshow () {
-[[ -z "$CURRENT_SLIDESHOW" ]] && CURRENT_SLIDESHOW=default
+: ${CURRENT_SLIDESHOW:=default}
 cat $SLIDESHOWDIR/$CURRENT_SLIDESHOW
 }
 export -f get_slideshow
@@ -452,11 +432,11 @@ cat >> $WTMPFILE << EOF
       <input file>${CONFIGDIR}/theme/vspace.png</input>
      </pixmap>
     </hbox>
-    <tree headers-visible="false" selected-row="0"
-      selection-mode="1" exported-column="1"
-      column-type="string|string" column-visible="true|false"
+    <tree selected-row="0" headers-visible="false"
+      selection-mode="1" exported-column="0"
+      column-type="string|string" column-visible="false|true"
       tooltip-text="$(gettext 'Doubleclick to set')">
-     <label>Images|Paths</label>
+     <label>Paths|Images</label>
      <variable>WP</variable>
      <input>build_list</input>
      <action signal="changed">refresh_preview</action>
@@ -593,7 +573,7 @@ cat << EOF
 ${PROGNAME}-${VERSION}
 Copyright(©) 2013 Nathan Fisher <nfisher.sr@gmail.com>
 EOF
-gtkdialog --file $WTMPFILE | tee $ETMPFILE
+gtkdialog --file $WTMPFILE > $ETMPFILE
 . $ETMPFILE
 [ ! "$EXIT" = "abort" ] && grep -v EXIT= $ETMPFILE > $USERCONFIGDIR/state
 rm $STMPFILE $ETMPFILE $ATMPFILE $PTMPFILE $WTMPFILE
