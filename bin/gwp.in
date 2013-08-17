@@ -40,18 +40,19 @@ if [ ! -f "$USERCONFIGDIR/wp-dirs" ] ; then
   dirname $(find $DEFAULT_WP_DIR -type f | sort | head -n 1) > \
     "$USERCONFIGDIR/wp-dirs"
 else
-  TMPFILE=$(mktemp)
-  awk '!x[$0]++' "$USERCONFIGDIR/wp-dirs" > $TMPFILE
-  mv $TMPFILE "$USERCONFIGDIR/wp-dirs"
-  unset TMPFILE
+  { rm "$USERCONFIGDIR/wp-dirs" && awk '!x[$0]++' > "$USERCONFIGDIR/wp-dirs" ; } < "$USERCONFIGDIR/wp-dirs"
 fi
 
-# Setup the slideshow
-SLIDESHOWDIR=$USERCONFIGDIR/slideshows
-[ ! -d "$SLIDESHOWDIR" ] && \
-  { install -d "$SLIDESHOWDIR" ; touch "$SLIDESHOWDIR/default"; }
-STMPFILE=$(mktemp)
-cat $SLIDESHOWDIR/$CURRENT_SLIDESHOW >> $STMPFILE
+# Setup the slideshow editor if enabled
+: ${SHOW_SLIDESHOW_EDITOR:=false}
+if [ "$SHOW_SLIDESHOW_EDITOR" = "true" ] ; then
+  SLIDESHOWDIR=$USERCONFIGDIR/slideshows
+  [ ! -d "$SLIDESHOWDIR" ] && \
+    { install -d "$SLIDESHOWDIR" ; touch "$SLIDESHOWDIR/default" ; }
+  STMPFILE=$(mktemp)
+  cat $SLIDESHOWDIR/$CURRENT_SLIDESHOW > $STMPFILE
+  . $LIBDIR/gui/slideshow-editor.sh
+fi
 
 # This sets the background for the preview area
 [[ -z "$PREVIEW_BACKGROUND" ]] && PREVIEW_BACKGROUND=Pattern
@@ -106,6 +107,7 @@ export \
   WP_DIR \
   WP \
   PREVIEW_BACKGROUND \
+  SHOW_SLIDESHOW_EDITOR \
   SLIDESHOWDIR \
   CURRENT_SLIDESHOW \
   STMPFILE \
@@ -210,113 +212,24 @@ cat $SLIDESHOWDIR/$CURRENT_SLIDESHOW
 }
 export -f get_slideshow
 
-
-# Create the prefs dialog
-export PTMPFILE=$(mktemp)
-cat >> $PTMPFILE << EOF
-<window title="$PROGNAME-$VERSION: $(gettext 'preferences')" icon="gtk-preferences" window-position="2">
- <vbox>
-  <hbox>
-   <text space-expand="false">
-    <label>$(gettext 'Preview height (pixels)')</label>
-   </text>
-   <hseparator space-expand="true"></hseparator>
-   <comboboxtext>
-    <variable>HEIGHT</variable>
-    <default>$HEIGHT</default>
-    <item>150</item>
-    <item>200</item>
-    <item>250</item>
-    <item>300</item>
-    <item>400</item>
-    <item>500</item>
-   </comboboxtext>
-  </hbox>
-  <hbox>
-   <text space-expand="false">
-    <label>$(gettext 'Preview background')</label>
-   </text>
-   <hseparator space-expand="true"></hseparator>
-   <comboboxtext>
-    <variable>PREVIEW_BACKGROUND</variable>
-    <default>$PREVIEW_BACKGROUND</default>
-    <item>Black</item>
-    <item>White</item>
-    <item>Pattern</item>
-    <item>none</item>
-   </comboboxtext>
-  </hbox>
-  <hbox>
-   <button>
-    <label>$(gettext 'Close')</label>
-    <input file stock="gtk-close"></input>
-   </button>
-  </hbox>
- </vbox>
-</window>
-EOF
+# Preferences dialog
 gwp_prefs () {
+[ -f $CONFIGDIR/conf ] && . $CONFIGDIR/conf
+. ${LIBDIR}/gui/preferences.sh
 TMPFILE=$(mktemp)
 gtkdialog --file $PTMPFILE > $TMPFILE
 . $TMPFILE
 [ ! "$EXIT" = "abort" ] && grep -v 'EXIT=' $TMPFILE > $USERCONFIGDIR/conf
-rm $TMPFILE
+rm -f $PTMPFILE $TMPFILE
 }
 export -f gwp_prefs
 
-# Create a simple "About" dialog
-ATMPFILE=$(mktemp)
-cat >> $ATMPFILE << EOF
-<window title="${PROGNAME}-${VERSION}: $(gettext 'about')" icon="gtk-about">
- <vbox>
-  <notebook labels="$(gettext 'About|Credits')">
-   <vbox>
-    <text use-markup="true">
-     <label>"<b>$(gettext 'A fast and lightweight wallpaper setter')</b>"</label>
-    </text>
-    <text>
-     <label>"$(gettext 'Gwp is designed to allow the average user to set their desktop wallpaper with a minimum of fuss. It is designed to be fast, easy, and desktop independent while providing a simple and streamlined interface.')"</label>
-    </text>
-    <button>
-     <label>https://bitbucket.org/nfisher1226/wallpaper2</label>
-     <action>xdg-open https://bitbucket.org/nfisher1226/wallpaper2 &</action>
-    </button>
-   </vbox>
-   <vbox>
-    <hbox>
-     <text space-expand="false">
-      <label>$(gettext 'Author'): Nathan Fisher</label>
-     </text>
-     <hseparator space-expand="true"></hseparator>
-    </hbox>
-    <hbox>
-     <text space-expand="false">
-      <label>$(gettext 'License'): GPLv2</label>
-     </text>
-     <hseparator space-expand="true"></hseparator>
-    </hbox>
-    <hbox>
-     <text space-expand="false">
-      <label>Copyright(©) 2013 Nathan Fisher</label>
-     </text>
-     <hseparator space-expand="true"></hseparator>
-    </hbox>
-    <text><label>" "</label></text>
-    <button>
-     <label>http://www.gnu.org/licenses/gpl-2.0.txt</label>
-     <action>xdg-open http://www.gnu.org/licenses/gpl-2.0.txt &</action>
-    </button>
-   </vbox>
-  </notebook>
-  <hbox>
-   <button>
-    <label>$(gettext 'Close')</label>
-    <input file stock="gtk-close"></input>
-   </button>
-  </hbox>
- </vbox>
-</window>
-EOF
+show_about () {
+. ${LIBDIR}/gui/about.sh
+gtkdialog --file $ATMPFILE
+rm -f $ATMPFILE
+}
+export -f show_about
 
 WTMPFILE=$(mktemp)
 cat >> $WTMPFILE << EOF
@@ -326,13 +239,7 @@ cat >> $WTMPFILE << EOF
    <vbox>
     <menubar>
      <menu>
-      <menuitem checkbox="true" use-underline="true" active="false"
-        accel-key="0x45" accel-mods="4">
-       <label>$(gettext 'Slideshow editor')</label>
-       <action>if true show:SLIDESHOW_EDITOR</action>
-       <action>if false hide:SLIDESHOW_EDITOR</action>
-      </menuitem>
-      <separator></separator>
+      $SS_MENUENTRY
       $VIEWERS
       <separator></separator>
       $EDITORS
@@ -400,7 +307,7 @@ cat >> $WTMPFILE << EOF
      </menu>
      <menu>
       <menuitem stock="gtk-about">
-       <action>gtkdialog --file $ATMPFILE &</action>
+       <action>show_about &</action>
        <label>$(gettext 'About')</label>
       </menuitem>
       <menuitem stock="gtk-help">
@@ -493,76 +400,7 @@ cat >> $WTMPFILE << EOF
     <input file>${CONFIGDIR}/theme/vspace.png</input>
    </pixmap>
   </hbox>
-  <vbox visible="false">
-   <hseparator space-expand="true" space-fill="true"></hseparator>
-   <hbox>
-    <button space-expand="false" space-fill="false"
-      tooltip-text="$(gettext 'Add selection to current slideshow')">
-     <input file stock="gtk-add"></input>
-     <action function="insert">WP,STREE</action>
-     <action>save:STREE</action>
-     <action>sed -i 's:|::g' $STMPFILE</action>
-     <action>refresh:STREE</action>
-     <action>cat $STMPFILE > $SLIDESHOWDIR/\$CURRENT_SLIDESHOW</action>
-    </button>
-    <button space-expand="false" space-fill="false"
-      tooltip-text="$(gettext 'Remove selection from current slideshow')">
-     <input file icon="gtk-remove"></input>
-     <action function="removeselected">STREE</action>
-     <action>save:STREE</action>
-     <action>sed -i 's:|::g' $STMPFILE</action>
-     <action>refresh:STREE</action>
-     <action>cat $STMPFILE > $SLIDESHOWDIR/\$CURRENT_SLIDESHOW</action>
-    </button>
-    <vseparator></vseparator>
-    <button space-expand="false" space-fill="false"
-      tooltip-text="$(gettext 'Play slideshow')">
-     <input file stock="gtk-media-play"></input>
-     <action>echo</action>
-    </button>
-    <button space-expand="false" space-fill="false"
-      tooltip-text="$(gettext 'Pause slideshow')">
-     <input file stock="gtk-media-pause"></input>
-     <action>echo</action>
-    </button>
-    <vseparator></vseparator>
-    <comboboxtext space-expand="false" space-fill="false">
-     <input>ls $SLIDESHOWDIR</input>
-     <variable>CURRENT_SLIDESHOW</variable>
-     <action>cat $SLIDESHOWDIR/\$CURRENT_SLIDESHOW > $STMPFILE</action>
-     <action type="refresh">STREE</action>
-    </comboboxtext>
-    <button space-expand="false" space-fill="false"
-      tooltip-text="$(gettext 'Create a new slideshow')">
-     <input file stock="gtk-new"></input>
-     <action>show:NEW_SLIDESHOW</action>
-    </button>
-    <entry visible="false">
-     <variable>NEW_SLIDESHOW</variable>
-     <action signal="activate">touch $SLIDESHOWDIR/\$NEW_SLIDESHOW</action>
-     <action signal="activate">refresh:CURRENT_SLIDESHOW</action>
-     <action signal="activate">hide:NEW_SLIDESHOW</action>
-    </entry>
-    <vseparator space-expand="false" space-fill="false"></vseparator>
-    <hbox space-expand="true" space-fill="true">
-     <text>
-      <label>" "</label>
-     </text>
-    </hbox>
-   </hbox>
-   <tree selection-mode="1"
-     tooltip-text="$(gettext 'Add items to the list that you wish to play in a slideshow')"
-     exported-column="0" column-type="string" column-visible="true">
-    <label>Images</label>
-    <height>250</height>
-    <input file>$STMPFILE</input>
-    <output file>$STMPFILE</output>
-    <variable>STREE</variable>
-    <action signal="changed">refresh_slideshow_preview</action>
-    <action signal="changed" type="refresh">CURRENTIMG</action>
-   </tree>
-   <variable>SLIDESHOW_EDITOR</variable>
-  </vbox>
+  $SS_EDITOR
  </vbox>
  <action signal="hide">exit:Close</action>
 </window>
@@ -576,4 +414,4 @@ EOF
 gtkdialog --file $WTMPFILE > $ETMPFILE
 . $ETMPFILE
 [ ! "$EXIT" = "abort" ] && grep -v EXIT= $ETMPFILE > $USERCONFIGDIR/state
-rm $STMPFILE $ETMPFILE $ATMPFILE $PTMPFILE $WTMPFILE
+rm -f $STMPFILE $ETMPFILE $WTMPFILE

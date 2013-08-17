@@ -1,5 +1,5 @@
 #!/bin/sh
-[ $1 ] && exit 1
+[ $1 ] || exit 1
 SELF="$0"
 SS="$1"
 PREFIX="$(dirname $(dirname $SELF))"

@@ -22,6 +22,11 @@ feh.sh \
 esetroot.sh \
 imlibsetroot.sh
 
+GUI_OBJS = \
+about.sh \
+preferences.sh \
+slideshow-editor.sh
+
 all: bin/${PROGNAME} bin/${CLIPROG}
 	@echo "Now run \"make install\""
 
@@ -66,6 +71,10 @@ install-libs:
 	install -d ${DESTDIR}${LIBDIR}
 	for OBJ in ${LIB_OBJS} ; \
 		do install -m 644 lib/$${OBJ} ${DESTDIR}${LIBDIR} ; done
+	install -d ${DESTDIR}${LIBDIR}/gui
+	for OBJ in ${GUI_OBJS} ; \
+		do install -m 644 lib/gui/$${OBJ} \
+			${DESTDIR}${LIBDIR}/gui ; done
 	install -d ${DESTDIR}${LIBDIR}/plugins
 	for OBJ in ${PLUGIN_OBJS} ; \
 		do install -m 644 lib/plugins/$${OBJ} \
