@@ -49,8 +49,6 @@ if [ "$SHOW_SLIDESHOW_EDITOR" = "true" ] ; then
   SLIDESHOWDIR=$USERCONFIGDIR/slideshows
   [ ! -d "$SLIDESHOWDIR" ] && \
     { install -d "$SLIDESHOWDIR" ; touch "$SLIDESHOWDIR/default" ; }
-  STMPFILE=$(mktemp)
-  cat $SLIDESHOWDIR/$CURRENT_SLIDESHOW > $STMPFILE
   . $LIBDIR/gui/slideshow-editor.sh
 fi
 
@@ -163,7 +161,7 @@ export -f refresh_slideshow_preview
 editor_programs () {
 while read ICON NAME CMD
   do if which $CMD &>/dev/null
-    then echo '<menuitem icon='\"$ICON\"'><label>'$NAME'</label><action>'$CMD \"\$WP\" \&'</action></menuitem>'
+    then echo '      <menuitem icon='\"$ICON\"'><label>'$NAME'</label><action>'$CMD \"\$WP\" \&'</action></menuitem>'
   fi
 done << EOF
 gimp Gimp gimp
@@ -174,7 +172,6 @@ inkscape Inkscape inkscape
 inkscape Inkscapelite inkscapelite
 EOF
 }
-export EDITORS="$(editor_programs)"
 
 # setup menu entries for various graphics viewers
 # This function reads from the redirection below in the format
@@ -182,7 +179,7 @@ export EDITORS="$(editor_programs)"
 viewer_programs () {
 while read ICON NAME CMD
   do if which $CMD &>/dev/null
-    then echo '<menuitem icon='\"$ICON\"'><label>'$NAME'</label><action>'$CMD \"\$WP\" \&'</action></menuitem>'
+    then echo '      <menuitem icon='\"$ICON\"'><label>'$NAME'</label><action>'$CMD \"\$WP\" \&'</action></menuitem>'
   fi
 done << EOF
 xnview XnView xnview
@@ -197,7 +194,6 @@ eog Eog eog
 fspot Fspot fspot
 EOF
 }
-export VIEWERS="$(viewer_programs)"
 
 # Refresh the status text
 status_refresh () {
@@ -239,10 +235,10 @@ cat >> $WTMPFILE << EOF
    <vbox>
     <menubar>
      <menu>
-      $SS_MENUENTRY
-      $VIEWERS
+$([ $SHOW_SLIDESHOW_EDITOR = true ] && create_slideshow_menuentry )
+$(viewer_programs)
       <separator></separator>
-      $EDITORS
+$(editor_programs)
       <separator></separator>
        <menuitem icon="gtk-close" use-underline="true" accel-key="0x51"
          accel-mods="4">
@@ -316,6 +312,29 @@ cat >> $WTMPFILE << EOF
       </menuitem>
       <label>$(gettext 'Help')</label>
      </menu>
+
+$(if [ $SHOW_SLIDESHOW_EDITOR = true ] ; then cat << EOM
+      <menu>
+       <menuitem accel-key="0x41" accel-mods="4">
+        <label>add to slideshow</label>
+        <action function="insert">WP,STREE</action>
+        <action>save:STREE</action>
+        <action>sed -i 's:|::g' $STMP</action>
+        <action>refresh:STREE</action>
+        <action>cat $STMP > $SLIDESHOWDIR/\$CURRENT_SLIDESHOW</action>
+       </menuitem>
+       <menuitem accel-key="0x44" accel-mods="4">
+        <label>remove frome slideshow</label>
+        <action function="removeselected">STREE</action>
+        <action>save:STREE</action>
+        <action>sed -i 's:|::g' $STMP</action>
+        <action>refresh:STREE</action>
+        <action>cat $STMP > $SLIDESHOWDIR/\$CURRENT_SLIDESHOW</action>
+       </menuitem>
+       <label>""</label>
+      </menu>
+EOM
+fi)
     </menubar>
     <hbox>
      <pixmap>
@@ -354,6 +373,12 @@ cat >> $WTMPFILE << EOF
      <action>echo MODE=\$MODE >> $USERCONFIGDIR/last</action>
      <action>echo BACKEND=\$BACKEND >> $USERCONFIGDIR/last</action>
      <action type="refresh">STATUS</action>
+$(if [ $SHOW_SLIDESHOW_EDITOR = true ] ; then cat << EOT
+     <action signal="button-press-event">right_click_add</action>
+     <action signal="button-press-event">refresh:STREE</action>
+     <action signal="button-press-event">cat $STMP > $SLIDESHOWDIR/\$CURRENT_SLIDESHOW</action>
+EOT
+fi)
     </tree>
    </vbox>
    <vbox width-request="$WIDTH" space-expand="true" space-fill="true">
@@ -400,7 +425,7 @@ cat >> $WTMPFILE << EOF
     <input file>${CONFIGDIR}/theme/vspace.png</input>
    </pixmap>
   </hbox>
-  $SS_EDITOR
+$([ $SHOW_SLIDESHOW_EDITOR = true ] && create_slideshow_editor)
  </vbox>
  <action signal="hide">exit:Close</action>
 </window>
