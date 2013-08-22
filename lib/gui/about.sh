@@ -11,7 +11,7 @@ cat >> $ATMPFILE << EOF
     <text>
      <label>"$(gettext 'Gwp is designed to allow the average user to set their desktop wallpaper with a minimum of fuss. It is designed to be fast, easy, and desktop independent while providing a simple and streamlined interface.')"</label>
     </text>
-    <button>
+    <button relief="2">
      <label>https://bitbucket.org/nfisher1226/wallpaper2</label>
      <action>xdg-open https://bitbucket.org/nfisher1226/wallpaper2 &</action>
     </button>
@@ -36,7 +36,7 @@ cat >> $ATMPFILE << EOF
      <hseparator space-expand="true"></hseparator>
     </hbox>
     <text><label>" "</label></text>
-    <button>
+    <button relief="2">
      <label>http://www.gnu.org/licenses/gpl-2.0.txt</label>
      <action>xdg-open http://www.gnu.org/licenses/gpl-2.0.txt &</action>
     </button>

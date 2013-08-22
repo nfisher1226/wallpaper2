@@ -368,6 +368,7 @@ fi)
      <action signal="changed">refresh_preview</action>
      <action signal="changed" type="refresh">CURRENTIMG</action>
      <action>set_wallpaper</action>
+     <action>[ -x $USERCONFIGDIR/custom ] && nohup $USERCONFIGDIR/custom &>/dev/null</action>
      <action>echo WP_DIR=\$WP_DIR > $USERCONFIGDIR/last</action>
      <action>echo WP=\$WP >> $USERCONFIGDIR/last</action>
      <action>echo MODE=\$MODE >> $USERCONFIGDIR/last</action>
@@ -411,6 +412,7 @@ fi)
     <label>$(gettext 'Apply')</label>
     <input file stock="gtk-apply"></input>
     <action>set_wallpaper</action>
+    <action>[ -x $USERCONFIGDIR/custom ] && nohup $USERCONFIGDIR/custom &>/dev/null</action>
     <action>echo WP_DIR=\$WP_DIR > $USERCONFIGDIR/last</action>
     <action>echo WP=\$WP >> $USERCONFIGDIR/last</action>
     <action>echo MODE=\$MODE >> $USERCONFIGDIR/last</action>
