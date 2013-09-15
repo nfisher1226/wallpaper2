@@ -12,7 +12,7 @@ case true in
   $ESETROOT) BACKEND=esetroot ;;
 esac
 : ${MODE:=Stretch}
-: ${BACKEND:=feh}
+: ${BACKEND:=$DEFAULT_BACKEND}
 . $LIBDIR/plugins/${BACKEND}.sh
 set_wallpaper "$MODE" "$WP"
 }

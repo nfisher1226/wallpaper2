@@ -22,22 +22,22 @@
 
 VERSION=2.0a2
 SELF="$0"
-PREFIX="$(dirname $(dirname $SELF))"
 PROGNAME=gwp
+BINDIR="${SELF%/*}"
+PREFIX="${BINDIR%/*}"
+LIBDIR="${PREFIX}/lib/${PROGNAME}"
 TEXTDOMAIN=$PROGNAME
 CONFIGDIR=@@@SYSCONFDIR@@@/$PROGNAME
 USERCONFIGDIR=$HOME/.config/$PROGNAME
-LIBDIR=$PREFIX/lib/$PROGNAME
 . $CONFIGDIR/conf
 export GTK2_RC_FILES=${CONFIGDIR}/theme/gtkrc:~/.gtkrc-2.0
 [ -f "$USERCONFIGDIR/conf" ] && . "$USERCONFIGDIR/conf"
 [ ! -d "$USERCONFIGDIR" ] && install -d "$USERCONFIGDIR"
 [ -f "$USERCONFIGDIR/state" ] && . "$USERCONFIGDIR/state"
-: ${MODE:=Stretch}
-: ${BACKEND:=$DEFAULT_BACKEND}
 : ${WP_DIR:="$(dirname $(find $DEFAULT_WP_DIR -type f | sort | head -n 1))"}
 if [ ! -f "$USERCONFIGDIR/wp-dirs" ] ; then
-  dirname $(find $DEFAULT_WP_DIR -type f | sort | head -n 1) > \
+  FIRST_FOUND="$(find $DEFAULT_WP_DIR -type f | sort | head -n 1)"
+  echo "${FIRST_FOUND%/*}" > \
     "$USERCONFIGDIR/wp-dirs"
 else
   { rm "$USERCONFIGDIR/wp-dirs" && awk '!x[$0]++' > "$USERCONFIGDIR/wp-dirs" ; } < "$USERCONFIGDIR/wp-dirs"
@@ -88,7 +88,7 @@ case true in
 esac
 # If no matches set some sane defaults
 : ${MODE:=Stretch}
-: ${BACKEND:=FEH}
+: ${BACKEND:=$DEFAULT_BACKEND}
 
 # Export all our variables for use with gtkdialog
 export \
@@ -123,6 +123,7 @@ export \
 
 # get the width for the preview area
 WIDTH=$(cut -f 1 -d '.' <<< $[$HEIGHT * 16 / 10])
+: ${WIDTH:=250}
 
 # Build our list of image files
 build_list () {
@@ -133,16 +134,16 @@ build_list () {
   \( -iname "*.png" \
   -o -iname "*.jp*g" \
   -o -iname "*.svg" \
-  -o -iname "*.tif*" \) \
-  -exec echo -n '{}|' \; \
-  -exec basename '{}' \;
+  -o -iname "*.tif" \
+  -o -iname "*.tiff" \) | \
+  while read f ; do echo "${f}|${f##*/}" ; done
 }
 export -f build_list
 
 # Refresh the preview image
 refresh_preview () {
 [ -f "$WP" ] && \
-   [ "$(egrep '.png|.jpg|.jpeg|.PNG|.JPG|.svg' <<< ${WP})" ] && \
+   [ "$(egrep -i '.png$|.jpg$|.jpeg$|.svg$|.tif$|.tiff$' <<< ${WP})" ] && \
    ln -sf "$WP" $USERCONFIGDIR/current.png
 }
 export -f refresh_preview
@@ -197,8 +198,8 @@ EOF
 
 # Refresh the status text
 status_refresh () {
-. $USERCONFIGDIR/last
-echo 'Current:' $(basename $WP)
+[ -f "$USERCONFIGDIR/last" ] && . $USERCONFIGDIR/last
+echo 'Current:' ${WP##*/}
 }
 export -f status_refresh
 

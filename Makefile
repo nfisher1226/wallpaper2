@@ -1,17 +1,29 @@
-PROGNAME = gwp
 VERSION = 2.0a2
+PROGNAME = gwp
 CLIPROG = cwp
+SSPROG = wps
 PREFIX ?=/usr/local
 SYSCONFDIR ?= ${PREFIX}/etc
 BINDIR = ${PREFIX}/bin
 LIBDIR = ${PREFIX}/lib/${PROGNAME}
 DOCDIR ?= ${PREFIX}/share/doc/${PROGNAME}
+
 BIN_OBJS = \
-bin/${PROGNAME} \
-bin/${CLIPROG}
+${PROGNAME} \
+${CLIPROG} \
+${SSPROG}
+
 CONF_OBJS = conf
-THEME_OBJS = gtkrc stock-transparency-24.png vspace.png
-DOC_OBJS = README INSTALL COPYING
+
+THEME_OBJS = \
+gtkrc \
+stock-transparency-24.png \
+vspace.png
+
+DOC_OBJS = \
+README \
+INSTALL \
+COPYING
 
 LIB_OBJS = \
 gwp.sh
@@ -27,22 +39,17 @@ about.sh \
 preferences.sh \
 slideshow-editor.sh
 
-all: bin/${PROGNAME} bin/${CLIPROG}
+all: ${BIN_OBJS}
 	@echo "Now run \"make install\""
 
-bin/${PROGNAME}:
-	sed "s%@@@SYSCONFDIR@@@%${SYSCONFDIR}%" bin/${PROGNAME}.in \
-		> bin/${PROGNAME}
-
-bin/${CLIPROG}:
-	sed -e "s%@@@LIBDIR@@@%${LIBDIR}%" \
-		-e "s%@@@SYSCONFDIR@@@%${SYSCONFDIR}%" \
-		bin/${CLIPROG}.in > bin/${CLIPROG}
+${BIN_OBJS}:
+	sed "s:@@@SYSCONFDIR@@@:${SYSCONFDIR}:" bin/$@.in \
+		> bin/$@
 
 install-bin: all
 	install -d ${DESTDIR}${BINDIR}
 	for OBJ in ${BIN_OBJS} ; \
-		do install -m 755 $${OBJ} ${DESTDIR}${BINDIR} ; done
+		do install -m 755 bin/$${OBJ} ${DESTDIR}${BINDIR} ; done
 
 install-conf: etc/theme/gtkrc
 	install -d ${DESTDIR}${SYSCONFDIR}/${PROGNAME}/theme
@@ -54,7 +61,7 @@ install-conf: etc/theme/gtkrc
 			${DESTDIR}${SYSCONFDIR}/${PROGNAME}/theme ; done
 
 etc/theme/gtkrc:
-	sed "s%@@@CONFDIR@@@%${SYSCONFDIR}/%" etc/theme/gtkrc.in \
+	sed "s:@@@CONFDIR@@@:${SYSCONFDIR}/:" etc/theme/gtkrc.in \
 		> etc/theme/gtkrc
 
 install-desktop:
@@ -84,7 +91,9 @@ install-libs:
 install: install-bin install-conf install-desktop install-libs
 
 clean:
-	rm -f bin/${PROGNAME} bin/${CLIPROG} etc/theme/gtkrc
+	for OBJ in ${BIN_OBJS} ; \
+		do rm -f bin/$${OBJ} ; done
+	rm -f etc/theme/gtkrc
 
 petpkg: puppy/${PROGNAME}-${VERSION}.pet
 
@@ -96,7 +105,7 @@ puppy/${PROGNAME}-${VERSION}.pet:
 		cut -f 1)/" puppy/pet.specs.in > \
 		puppy/${PROGNAME}-${VERSION}/pet.specs
 	cd puppy ; tar czf ${PROGNAME}-${VERSION}.pet ${PROGNAME}-${VERSION}
-	echo $$(md5sum puppy/${PROGNAME}-${VERSION}.pet | cut -f 1 -d ' ') \
+	md5sum puppy/${PROGNAME}-${VERSION}.pet | cut -f 1 -d ' ' \
 		>> puppy/${PROGNAME}-${VERSION}.pet
 	@echo
 	@echo 'Pet package created as puppy/${PROGNAME}-${VERSION}.pet'

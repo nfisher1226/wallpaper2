@@ -1,13 +1,15 @@
 #!/bin/sh
 [ $1 ] || exit 1
+
+VERSION=2.0a2
 SELF="$0"
-SS="$1"
-PREFIX="$(dirname $(dirname $SELF))"
 PROGNAME=gwp
+BINDIR="${SELF%/*}"
+PREFIX="${BINDIR%/*}"
+LIBDIR="${PREFIX}/lib/${PROGNAME}"
 TEXTDOMAIN=$PROGNAME
 CONFIGDIR=@@@SYSCONFDIR@@@/$PROGNAME
 USERCONFIGDIR=$HOME/.config/$PROGNAME
-LIBDIR=$PREFIX/lib/$PROGNAME
 . $CONFIGDIR/conf
 [ -f "$USERCONFIGDIR/conf" ] && . "$USERCONFIGDIR/conf"
 
